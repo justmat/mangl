@@ -1,4 +1,4 @@
--- mngl
+-- mangl
 --
 -- arc required.
 --
@@ -14,7 +14,7 @@
 --
 -- ----------
 --
--- mngl is a 4 track granular
+-- mangl is a 4 track granular
 -- sample player.
 --
 -- arc ring 1 = speed
@@ -112,7 +112,7 @@ function init()
     params:set_action(v .. "fade", function(value) engine.envscale(v, value / 1000) end)
   end
 
-  params:read("mngl.pset")
+  params:read("mangl.pset")
   params:bang()
 
   local arc_redraw_timer = metro.init()
