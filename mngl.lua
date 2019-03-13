@@ -26,7 +26,7 @@
 -- norns key2 = enable/disable
 --                voice
 -- norns key3 = next track
--- 
+--
 -- holding alt and turning a ring,
 -- or pressing a button,
 -- performs a secondary
@@ -66,7 +66,7 @@ function init()
   end
 
   params:add_separator()
-  
+
   local sep = ": "
 
   params:add_taper("reverb_mix", "*" .. sep .. "mix", 0, 100, 0, 0, "%")
@@ -114,12 +114,12 @@ function init()
 
   params:read("mngl.pset")
   params:bang()
-  
+
   local arc_redraw_timer = metro.init()
   arc_redraw_timer.time = 0.025
   arc_redraw_timer.event = function() arc_redraw() end
   arc_redraw_timer:start()
- 
+
   local norns_redraw_timer = metro.init()
   norns_redraw_timer.time = 0.025
   norns_redraw_timer.event = function() redraw() end
