@@ -1,2 +1,2 @@
 # mngl
-granular sample player for norns
+a mod of @tehn's angl, using @artfwo's Glut engine, for norns.
