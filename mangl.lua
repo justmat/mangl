@@ -112,7 +112,7 @@ function init()
     params:set_action(v .. "fade", function(value) engine.envscale(v, value / 1000) end)
   end
 
-  params:read("mangl.pset")
+  params:read()
   params:bang()
 
   local arc_redraw_timer = metro.init()
