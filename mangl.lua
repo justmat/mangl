@@ -57,6 +57,14 @@ local page = 1
 local alt = false
 local scrub_sensitivity = 450
 
+
+local function scrub(n, d, speed)
+  params:set(n .. "speed", 0)
+  engine.seek(n, positions[n] + d / scrub_sensitivity)
+  params:set(n .. "speed", speed)
+end
+
+
 function init()
   -- polls
   for v = 1, VOICES do
@@ -161,8 +169,8 @@ end
 function a.delta(n, d)
   if alt then
     if n == 1 then
-      params:set(page .. "speed", 0)
-      engine.seek(page, positions[page] + d / scrub_sensitivity)
+      local speed = params:get(page .. "speed")
+      scrub(page, d, speed)
     elseif n == 2 then
       params:delta(page .. "pitch", d / 20)
     elseif n == 3 then
