@@ -162,6 +162,7 @@ function a.delta(n, d)
   if alt then
     if n == 1 then
       params:set(page .. "speed", 0)
+      engine.seek(page, positions[page] + d / 450)
     elseif n == 2 then
       params:delta(page .. "pitch", d / 20)
     elseif n == 3 then
