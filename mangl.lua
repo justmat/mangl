@@ -55,13 +55,23 @@ local positions = {-1,-1,-1,-1}
 local pages = {"one", "two", "three", "four"}
 local page = 1
 local alt = false
+
 local scrub_sensitivity = 450
+local was_playing = false
+local old_speed = {nil, nil, nil, nil}
 
 
-local function scrub(n, d, speed)
-  params:set(n .. "speed", 0)
+local function scrub(n, d)
+  if speed ~= 0 then
+    params:set(n .. "speed", 0)
+    was_playing = true
+  end
   engine.seek(n, positions[n] + d / scrub_sensitivity)
-  params:set(n .. "speed", speed)
+end
+
+
+local function set_speed(n, speed)
+  old_speed[n] = speed
 end
 
 
@@ -137,6 +147,10 @@ end
 
 function key(n, z)
   if n == 1 then
+    if was_playing then
+      params:set(page .. "speed", old_speed[page])
+      was_playing = not was_playing
+    end
     alt = z == 1 and true or false
   end
 
@@ -169,8 +183,7 @@ end
 function a.delta(n, d)
   if alt then
     if n == 1 then
-      local speed = params:get(page .. "speed")
-      scrub(page, d, speed)
+      scrub(page, d)
     elseif n == 2 then
       params:delta(page .. "pitch", d / 20)
     elseif n == 3 then
@@ -181,6 +194,8 @@ function a.delta(n, d)
   else
     if n == 1 then
       params:delta(page .. "speed", d / 10)
+      local speed = params:get(page .. "speed")
+      set_speed(page, speed)
     elseif n == 2 then
       params:delta(page .. "pitch", d / 2)
     elseif n == 3 then
