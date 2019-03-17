@@ -32,7 +32,7 @@
 -- performs a secondary
 -- function.
 --
--- alt + ring1 = hold position
+-- alt + ring1 = scrub
 -- alt + ring2 = fine tune
 -- alt + ring3 = spread
 -- alt + ring4 = jitter
@@ -55,7 +55,7 @@ local positions = {-1,-1,-1,-1}
 local pages = {"one", "two", "three", "four"}
 local page = 1
 local alt = false
-
+local scrub_sensitivity = 450
 
 function init()
   -- polls
@@ -162,7 +162,7 @@ function a.delta(n, d)
   if alt then
     if n == 1 then
       params:set(page .. "speed", 0)
-      engine.seek(page, positions[page] + d / 450)
+      engine.seek(page, positions[page] + d / scrub_sensitivity)
     elseif n == 2 then
       params:delta(page .. "pitch", d / 20)
     elseif n == 3 then
