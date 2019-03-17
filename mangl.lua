@@ -37,8 +37,8 @@
 -- alt + ring3 = spread
 -- alt + ring4 = jitter
 --
--- alt + key2 = flip
--- alt + key3 = skip
+-- alt + key2 = ?
+-- alt + key3 = ?
 --
 -- ----------
 --
@@ -52,8 +52,8 @@ local a = arc.connect(1)
 local tau = math.pi * 2
 local VOICES = 4
 local positions = {-1,-1,-1,-1}
-local pages = {"one", "two", "three", "four"}
-local page = 1
+local tracks = {"one", "two", "three", "four"}
+local track = 1
 local alt = false
 
 local scrub_sensitivity = 450
@@ -148,32 +148,20 @@ end
 function key(n, z)
   if n == 1 then
     if was_playing then
-      params:set(page .. "speed", old_speed[page])
+      params:set(track .. "speed", old_speed[track])
       was_playing = not was_playing
     end
     alt = z == 1 and true or false
   end
 
   if z == 1 then
-    if alt then
-      if n == 2 then
-        -- flip
-        local speed = params:get(page .. "speed")
-        speed = -speed
-        params:set(page .. "speed", speed)
-      elseif n == 3 then
-        -- skip
-        engine.seek(page, 1)
-      end
-    else
-      if n == 2 then
-        params:set(page .. "play", params:get(page .. "play") == 2 and 1 or 2)
-      elseif n == 3 then
-        if params:get((page % VOICES) + 1 .. "sample") == "-" then
-          page = 1
-        else
-          page = (page % VOICES) + 1
-        end
+    if n == 2 then
+      params:set(track .. "play", params:get(track .. "play") == 2 and 1 or 2)
+    elseif n == 3 then
+      if params:get((track % VOICES) + 1 .. "sample") == "-" then
+        track = 1
+      else
+        track = (track % VOICES) + 1
       end
     end
   end
@@ -183,25 +171,24 @@ end
 function a.delta(n, d)
   if alt then
     if n == 1 then
-      scrub(page, d)
+      scrub(track, d)
     elseif n == 2 then
-      params:delta(page .. "pitch", d / 20)
+      params:delta(track .. "pitch", d / 20)
     elseif n == 3 then
-      params:delta(page .. "spread", d / 10)
+      params:delta(track .. "spread", d / 10)
     elseif n == 4 then
-      params:delta(page .. "jitter", d / 10)
+      params:delta(track .. "jitter", d / 10)
     end
   else
     if n == 1 then
-      params:delta(page .. "speed", d / 10)
-      local speed = params:get(page .. "speed")
-      set_speed(page, speed)
+      params:delta(track .. "speed", d / 10)
+      set_speed(track, params:get(track .. "speed"))
     elseif n == 2 then
-      params:delta(page .. "pitch", d / 2)
+      params:delta(track .. "pitch", d / 2)
     elseif n == 3 then
-      params:delta(page .. "size", d / 10)
+      params:delta(track .. "size", d / 10)
     elseif n == 4 then
-      params:delta(page .. "density", d / 10)
+      params:delta(track .. "density", d / 10)
     end
   end
 end
@@ -209,21 +196,21 @@ end
 
 function arc_redraw()
   a:all(0)
-  a:segment(1, positions[page] * tau, tau * positions[page] + 0.2, 15)
-  local pitch = params:get(page .. "pitch") / 10
+  a:segment(1, positions[track] * tau, tau * positions[track] + 0.2, 15)
+  local pitch = params:get(track .. "pitch") / 10
   if pitch > 0 then
     a:segment(2, 0.5, 0.5 + pitch, 15)
   else
     a:segment(2, pitch - 0.5, -0.5, 15)
   end
   if alt == true then
-    local spread = params:get(page .. "spread") / 40
-    local jitter = params:get(page .. "jitter") / 80
+    local spread = params:get(track .. "spread") / 40
+    local jitter = params:get(track .. "jitter") / 80
     a:segment(3, 0.5, 0.5 + spread, 15)
     a:segment(4, 0.5, 0.5 + jitter, 15)
   else
-    local size = params:get(page .. "size") / 80
-    local density = params:get(page .. "density") / 82
+    local size = params:get(track .. "size") / 80
+    local density = params:get(track .. "density") / 82
     a:segment(3, 0.5, 0.5 + size, 15)
     a:segment(4, 0.5, 0.5 + density, 15)
   end
@@ -234,26 +221,26 @@ end
 function redraw()
   screen.clear()
   screen.move(64,40)
-  screen.level(params:get(page .. "play") == 2 and 15 or 4)
+  screen.level(params:get(track .. "play") == 2 and 15 or 4)
   screen.font_face(10)
   screen.font_size(30)
-  screen.text_center(pages[page])
+  screen.text_center(tracks[track])
   screen.move(20, 60)
   screen.level(15)
   screen.font_size(8)
   screen.font_face(1)
-  screen.text_center(string.format("%.2f", params:get(page .. "speed")))
+  screen.text_center(string.format("%.2f", params:get(track .. "speed")))
   screen.move(50, 60)
-  screen.text_center(string.format("%.2f", params:get(page .. "pitch")))
+  screen.text_center(string.format("%.2f", params:get(track .. "pitch")))
   screen.move(80, 60)
   if alt then
-    screen.text_center(string.format("%.2f", params:get(page .. "spread")))
+    screen.text_center(string.format("%.2f", params:get(track .. "spread")))
     screen.move(110, 60)
-    screen.text_center(string.format("%.2f", params:get(page .. "jitter")))
+    screen.text_center(string.format("%.2f", params:get(track .. "jitter")))
   else
-    screen.text_center(string.format("%.2f", params:get(page .. "size")))
+    screen.text_center(string.format("%.2f", params:get(track .. "size")))
     screen.move(110, 60)
-    screen.text_center(string.format("%.2f", params:get(page .. "density")))
+    screen.text_center(string.format("%.2f", params:get(track .. "density")))
   end
   screen.update()
 end
