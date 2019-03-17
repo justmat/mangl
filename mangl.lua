@@ -42,7 +42,7 @@
 --
 -- ----------
 --
--- @justmat v0.1
+-- @justmat v0.2
 --
 
 engine.name = 'Glut'
