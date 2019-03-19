@@ -102,6 +102,13 @@ local function set_old_speed(n, speed)
 end
 
 
+local function clear_loop(track)
+  loop_in[track] = nil
+  loop_out[track] = nil
+  loops[track].state = 0
+end
+
+
 function loop_pos(track)
   for i = 1, VOICES do
     if loops[i].state == 1 then
@@ -121,17 +128,10 @@ function loop_pos(track)
 end
 
 
-local function clear_loop(track)
-  loop_in[track] = nil
-  loop_out[track] = nil
-  loops[track].state = 0
-end
-
-
 function init()
   -- polls
   for v = 1, VOICES do
-    local phase_poll = poll.set('phase_' .. v, function(pos) positions[v] = pos end)
+    local phase_poll = poll.set('phase_' .. v, function(pos) loop_pos(track) positions[v] = pos end)
     phase_poll.time = 0.025
     phase_poll:start()
   end
@@ -196,10 +196,6 @@ function init()
   norns_redraw_timer.event = function() redraw() end
   norns_redraw_timer:start()
 
-  local loop_timer = metro.init()
-  loop_timer.time = 0.025
-  loop_timer.event = function() loop_pos(track) end
-  loop_timer:start()
 end
 
 
@@ -219,13 +215,24 @@ function key(n, z)
     if n == 2 then
       if z == 1 then
         if loop_in[track] == nil then
-          loop_in[track] = positions[track]
+          if loops[track].dir == -1 then
+            loop_out[track] = positions[track]
+          else
+            loop_in[track] = positions[track]
+          end
         end
       else
-        loop_out[track] = positions[track]
-        positions[track] = loop_in[track]
-        engine.seek(track, loop_in[track])
-        loops[track].state = 1
+        if loops[track].dir == -1 then
+          loop_in[track] = positions[track]
+          positions[track] = loop_out[track]
+          engine.seek(track, loop_out[track])
+          loops[track].state = 1
+        else
+          loop_out[track] = positions[track]
+          positions[track] = loop_in[track]
+          engine.seek(track, loop_in[track])
+          loops[track].state = 1
+        end
       end
     elseif n == 3 then
       clear_loop(track)
@@ -319,7 +326,7 @@ function redraw()
     screen.text_center(string.format("%.2f", params:get(track .. "density")))
   end
 
-  screen.move(90, 40)
+  screen.move(track == 3 and 100 or 90, 40)
   screen.level(loops[track].state == 1 and 12 or 0)
   screen.font_size(12)
   screen.font_face(12)
