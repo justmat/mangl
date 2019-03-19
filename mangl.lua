@@ -27,6 +27,13 @@
 --                voice
 -- norns key3 = next track
 --
+-- nb: key3 will only advance to
+-- the next track if there is a
+-- sample loaded. otherwise
+-- returns to track 1.
+--
+-- ----------
+--
 -- holding alt and turning a ring,
 -- or pressing a button,
 -- performs a secondary
@@ -37,12 +44,16 @@
 -- alt + ring3 = spread
 -- alt + ring4 = jitter
 --
--- alt + key2 = ?
--- alt + key3 = ?
+-- alt + key2 = loop in/out
+-- alt + key3 = loop clear
+--
+-- nb: loop in/out is set in
+-- one button press. loop in
+-- on press, loop out on release.
 --
 -- ----------
 --
--- @justmat v0.2
+-- @justmat v0.3
 --
 
 engine.name = 'Glut'
@@ -58,20 +69,62 @@ local alt = false
 
 local scrub_sensitivity = 450
 local was_playing = false
-local old_speed = {nil, nil, nil, nil}
+local old_speed = {0, 0, 0, 0}
+
+local loops = {}
+for i = 1, VOICES do
+  loops[i] = {
+    state = 0,
+    dir = 1
+  }
+end
+
+local loop_in = {nil, nil, nil, nil}
+local loop_out = {nil, nil, nil, nil}
 
 
 local function scrub(n, d)
-  if speed ~= 0 then
-    params:set(n .. "speed", 0)
-    was_playing = true
-  end
+  params:set(n .. "speed", 0)
+  was_playing = true
   engine.seek(n, positions[n] + d / scrub_sensitivity)
 end
 
 
-local function set_speed(n, speed)
+local function set_old_speed(n, speed)
   old_speed[n] = speed
+  if speed ~= 0 then
+    if speed < 0 then
+      loops[n].dir = -1
+    else
+      loops[n].dir = 1
+    end
+  end
+end
+
+
+function loop_pos(track)
+  for i = 1, VOICES do
+    if loops[i].state == 1 then
+      if loops[i].dir == -1 then
+        if loop_out[i] and positions[i] <= loop_in[i] then
+          positions[i] = loop_out[i]
+          engine.seek(i, loop_out[i])
+        end
+      else
+        if loop_out[i] and positions[i] >= loop_out[i] then
+          positions[i] = loop_in[i]
+          engine.seek(i, loop_in[i])
+        end
+      end
+    end
+  end
+end
+
+
+local function clear_loop(track)
+  loop_in[track] = nil
+  loop_out[track] = nil
+  loops[track].state = 0
 end
 
 
@@ -108,7 +161,7 @@ function init()
     params:add_taper(v .. "volume", v .. sep .. "volume", -60, 20, -10, 0, "dB")
     params:set_action(v .. "volume", function(value) engine.volume(v, math.pow(10, value / 20)) end)
 
-    params:add_taper(v .. "speed", v .. sep .. "speed", -200, 200, 0, 0, "%")
+    params:add_taper(v .. "speed", v .. sep .. "speed", -500, 500, 0, 0, "%")
     params:set_action(v .. "speed", function(value) engine.speed(v, value / 100) end)
 
     params:add_taper(v .. "jitter", v .. sep .. "jitter", 0, 500, 0, 5, "ms")
@@ -142,22 +195,45 @@ function init()
   norns_redraw_timer.time = 0.025
   norns_redraw_timer.event = function() redraw() end
   norns_redraw_timer:start()
+
+  local loop_timer = metro.init()
+  loop_timer.time = 0.025
+  loop_timer.event = function() loop_pos(track) end
+  loop_timer:start()
 end
 
 
 function key(n, z)
   if n == 1 then
+    if params:get(track .. "speed") ~= 0 then
+      set_old_speed(track, params:get(track .. "speed"))
+    end
     if was_playing then
       params:set(track .. "speed", old_speed[track])
-      was_playing = not was_playing
+      was_playing = false
     end
     alt = z == 1 and true or false
   end
 
-  if z == 1 then
+  if alt then
     if n == 2 then
-      params:set(track .. "play", params:get(track .. "play") == 2 and 1 or 2)
+      if z == 1 then
+        if loop_in[track] == nil then
+          loop_in[track] = positions[track]
+        end
+      else
+        loop_out[track] = positions[track]
+        positions[track] = loop_in[track]
+        engine.seek(track, loop_in[track])
+        loops[track].state = 1
+      end
     elseif n == 3 then
+      clear_loop(track)
+    end
+  else
+    if n == 2 and z == 1 then
+      params:set(track .. "play", params:get(track .. "play") == 2 and 1 or 2)
+    elseif n == 3 and z == 1 then
       if params:get((track % VOICES) + 1 .. "sample") == "-" then
         track = 1
       else
@@ -182,7 +258,7 @@ function a.delta(n, d)
   else
     if n == 1 then
       params:delta(track .. "speed", d / 10)
-      set_speed(track, params:get(track .. "speed"))
+      set_old_speed(track, params:get(track .. "speed"))
     elseif n == 2 then
       params:delta(track .. "pitch", d / 2)
     elseif n == 3 then
@@ -221,18 +297,18 @@ end
 function redraw()
   screen.clear()
   screen.move(64,40)
-  screen.level(params:get(track .. "play") == 2 and 15 or 4)
+  screen.level(params:get(track .. "play") == 2 and 15 or 3)
   screen.font_face(10)
   screen.font_size(30)
   screen.text_center(tracks[track])
   screen.move(20, 60)
-  screen.level(15)
   screen.font_size(8)
   screen.font_face(1)
   screen.text_center(string.format("%.2f", params:get(track .. "speed")))
   screen.move(50, 60)
   screen.text_center(string.format("%.2f", params:get(track .. "pitch")))
   screen.move(80, 60)
+
   if alt then
     screen.text_center(string.format("%.2f", params:get(track .. "spread")))
     screen.move(110, 60)
@@ -242,5 +318,12 @@ function redraw()
     screen.move(110, 60)
     screen.text_center(string.format("%.2f", params:get(track .. "density")))
   end
+
+  screen.move(90, 40)
+  screen.level(loops[track].state == 1 and 12 or 0)
+  screen.font_size(12)
+  screen.font_face(12)
+  screen.text("L")
+
   screen.update()
 end
