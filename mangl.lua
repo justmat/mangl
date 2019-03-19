@@ -69,7 +69,7 @@ local alt = false
 
 local scrub_sensitivity = 450
 local was_playing = false
-local old_speed = {0, 0, 0, 0}
+local track_speed = {0, 0, 0, 0}
 
 local loops = {}
 for i = 1, VOICES do
@@ -90,9 +90,10 @@ local function scrub(n, d)
 end
 
 
-local function set_old_speed(n, speed)
-  old_speed[n] = speed
+local function hold_track_speed(n)
+  local speed = params:get(n .. "speed")
   if speed ~= 0 then
+    track_speed[n] = speed
     if speed < 0 then
       loops[n].dir = -1
     else
@@ -109,7 +110,7 @@ local function clear_loop(track)
 end
 
 
-function loop_pos(track)
+function loop_pos()
   for i = 1, VOICES do
     if loops[i].state == 1 then
       if loops[i].dir == -1 then
@@ -131,7 +132,7 @@ end
 function init()
   -- polls
   for v = 1, VOICES do
-    local phase_poll = poll.set('phase_' .. v, function(pos) loop_pos(track) positions[v] = pos end)
+    local phase_poll = poll.set('phase_' .. v, function(pos) loop_pos() positions[v] = pos end)
     phase_poll.time = 0.025
     phase_poll:start()
   end
@@ -201,11 +202,9 @@ end
 
 function key(n, z)
   if n == 1 then
-    if params:get(track .. "speed") ~= 0 then
-      set_old_speed(track, params:get(track .. "speed"))
-    end
+    hold_track_speed(track)
     if was_playing then
-      params:set(track .. "speed", old_speed[track])
+      params:set(track .. "speed", track_speed[track])
       was_playing = false
     end
     alt = z == 1 and true or false
@@ -265,7 +264,7 @@ function a.delta(n, d)
   else
     if n == 1 then
       params:delta(track .. "speed", d / 10)
-      set_old_speed(track, params:get(track .. "speed"))
+      hold_track_speed(track)
     elseif n == 2 then
       params:delta(track .. "pitch", d / 2)
     elseif n == 3 then
