@@ -319,7 +319,7 @@ function redraw()
     screen.text_center(string.format("%.2f", params:get(track .. "density")))
   end
 
-  screen.move(90, 40)
+  screen.move(track == 3 and 100 or 90, 40)
   screen.level(loops[track].state == 1 and 12 or 0)
   screen.font_size(12)
   screen.font_face(12)
