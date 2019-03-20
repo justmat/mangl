@@ -4,7 +4,7 @@ arc required.
 
 ---
 
-based on the script angl
+based on angl
 by @tehn and the
 engine: glut by @artfwo
 
