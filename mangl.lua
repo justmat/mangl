@@ -67,6 +67,9 @@ local tracks = {"one", "two", "three", "four"}
 local track = 1
 local alt = false
 
+local last_enc = 0
+local time_last_enc = 0
+
 local scrub_sensitivity = 450
 local was_playing = false
 local track_speed = {0, 0, 0, 0}
@@ -159,7 +162,7 @@ function init()
     params:add_option(v .. "play", v .. sep .. "play", {"off","on"}, 1)
     params:set_action(v .. "play", function(x) engine.gate(v, x-1) end)
 
-    params:add_taper(v .. "volume", v .. sep .. "volume", -60, 20, -10, 0, "dB")
+    params:add_taper(v .. "volume", v .. sep .. "volume", -60, 20, -12, 0, "dB")
     params:set_action(v .. "volume", function(value) engine.volume(v, math.pow(10, value / 20)) end)
 
     params:add_taper(v .. "speed", v .. sep .. "speed", -300, 300, 0, 0, "%")
@@ -254,6 +257,15 @@ function key(n, z)
 end
 
 
+function enc(n, d)
+  if n == 1 then
+    params:delta(track .. "volume", d)
+  end
+  last_enc = n
+  time_last_enc = util.time()
+end
+
+
 function a.delta(n, d)
   if alt then
     if n == 1 then
@@ -311,6 +323,14 @@ function redraw()
   screen.font_face(10)
   screen.font_size(30)
   screen.text_center(tracks[track])
+  
+  if util.time() - time_last_enc < .6 and last_enc == 1 then
+    screen.move(10, 10)
+    screen.font_face(1)
+    screen.font_size(8)
+    screen.text("vol : " .. string.format("%.2f", params:get(track .. "volume")))
+  end
+  
   screen.move(20, 60)
   screen.font_size(8)
   screen.font_face(1)
