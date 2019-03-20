@@ -25,6 +25,7 @@ sample player.
 * norns key2 = enable/disable
                voice
 * norns key3 = next track
+* norns enc1 = track volume
 
 _nb: key3 will only advance to
 the next track if there is a
