@@ -114,12 +114,12 @@ function loop_pos()
   for i = 1, VOICES do
     if loops[i].state == 1 then
       if loops[i].dir == -1 then
-        if loop_out[i] and positions[i] <= loop_in[i] then
+        if positions[i] <= loop_in[i] then
           positions[i] = loop_out[i]
           engine.seek(i, loop_out[i])
         end
       else
-        if loop_out[i] and positions[i] >= loop_out[i] then
+        if positions[i] >= loop_out[i] then
           positions[i] = loop_in[i]
           engine.seek(i, loop_in[i])
         end
@@ -132,7 +132,7 @@ end
 function init()
   -- polls
   for v = 1, VOICES do
-    local phase_poll = poll.set('phase_' .. v, function(pos) loop_pos() positions[v] = pos end)
+    local phase_poll = poll.set('phase_' .. v, function(pos) positions[v] = pos end)
     phase_poll.time = 0.025
     phase_poll:start()
   end
@@ -162,7 +162,7 @@ function init()
     params:add_taper(v .. "volume", v .. sep .. "volume", -60, 20, -10, 0, "dB")
     params:set_action(v .. "volume", function(value) engine.volume(v, math.pow(10, value / 20)) end)
 
-    params:add_taper(v .. "speed", v .. sep .. "speed", -500, 500, 0, 0, "%")
+    params:add_taper(v .. "speed", v .. sep .. "speed", -300, 300, 0, 0, "%")
     params:set_action(v .. "speed", function(value) engine.speed(v, value / 100) end)
 
     params:add_taper(v .. "jitter", v .. sep .. "jitter", 0, 500, 0, 5, "ms")
@@ -197,13 +197,17 @@ function init()
   norns_redraw_timer.event = function() redraw() end
   norns_redraw_timer:start()
 
+  local loop_timer = metro.init()
+  loop_timer.time = 0.005
+  loop_timer.event = function() loop_pos() end
+  loop_timer:start()
 end
 
 
 function key(n, z)
   if n == 1 then
     hold_track_speed(track)
-    if was_playing then
+    if z == 0 and was_playing then
       params:set(track .. "speed", track_speed[track])
       was_playing = false
     end
