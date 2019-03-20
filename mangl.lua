@@ -89,6 +89,7 @@ local loop_out = {nil, nil, nil, nil}
 
 
 local function scrub(n, d)
+  -- scrub playback position
   params:set(n .. "speed", 0)
   was_playing = true
   engine.seek(n, positions[n] + d / scrub_sensitivity)
@@ -96,6 +97,7 @@ end
 
 
 local function hold_track_speed(n)
+  -- remember track speed and direction while scrubbing audio file
   local speed = params:get(n .. "speed")
   if speed ~= 0 then
     track_speed[n] = speed
@@ -116,6 +118,7 @@ end
 
 
 function loop_pos()
+  -- keeps playback inside the loop
   for i = 1, VOICES do
     if loops[i].state == 1 then
       if loops[i].dir == -1 then
@@ -146,7 +149,7 @@ function init()
 
   local sep = ": "
 
-  params:add_taper("reverb_mix", "*" .. sep .. "mix", 0, 100, 0, 0, "%")
+  params:add_taper("reverb_mix", "*" .. sep .. "mix", 0, 100, 20, 0, "%")
   params:set_action("reverb_mix", function(value) engine.reverb_mix(value / 100) end)
 
   params:add_taper("reverb_room", "*" .. sep .. "room", 0, 100, 50, 0, "%")
@@ -191,23 +194,24 @@ function init()
 
   params:read()
   params:bang()
-
+  -- arc redraw metro
   local arc_redraw_timer = metro.init()
   arc_redraw_timer.time = 0.025
   arc_redraw_timer.event = function() arc_redraw() end
   arc_redraw_timer:start()
-
+  -- norns redraw metro
   local norns_redraw_timer = metro.init()
   norns_redraw_timer.time = 0.025
   norns_redraw_timer.event = function() redraw() end
   norns_redraw_timer:start()
-
+  -- loop metro
   local loop_timer = metro.init()
   loop_timer.time = 0.005
   loop_timer.event = function() loop_pos() end
   loop_timer:start()
 end
 
+-- norns
 
 function key(n, z)
   if n == 1 then
@@ -220,6 +224,8 @@ function key(n, z)
   end
 
   if alt then
+    -- key 2 sets the loop_in and loop_out points
+    -- loop_in on press, loop_out on release
     if n == 2 then
       if z == 1 then
         if loop_in[track] == nil then
@@ -242,12 +248,15 @@ function key(n, z)
           loops[track].state = 1
         end
       end
+    -- key 3 clears the currently selected track
     elseif n == 3 then
       clear_loop(track)
     end
   else
+    -- key 2 activates and deactivates the currently selected voice
     if n == 2 and z == 1 then
       params:set(track .. "play", params:get(track .. "play") == 2 and 1 or 2)
+    -- key 3 advances track, or wraps to 1 if no sample is loaded
     elseif n == 3 and z == 1 then
       if params:get((track % VOICES) + 1 .. "sample") == "-" then
         track = 1
@@ -267,6 +276,50 @@ function enc(n, d)
   time_last_enc = util.time()
 end
 
+
+function redraw()
+  screen.clear()
+  screen.move(64,40)
+  screen.level(params:get(track .. "play") == 2 and 15 or 3)
+  screen.font_face(10)
+  screen.font_size(30)
+  screen.text_center(tracks[track])
+  
+  if util.time() - time_last_enc < .6 and last_enc == 1 then
+    screen.move(10, 10)
+    screen.font_face(1)
+    screen.font_size(8)
+    screen.text("vol : " .. string.format("%.2f", params:get(track .. "volume")))
+  end
+  
+  screen.move(20, 60)
+  screen.font_size(8)
+  screen.font_face(1)
+  screen.text_center(string.format("%.2f", params:get(track .. "speed")))
+  screen.move(50, 60)
+  screen.text_center(string.format("%.2f", params:get(track .. "pitch")))
+  screen.move(80, 60)
+
+  if alt then
+    screen.text_center(string.format("%.2f", params:get(track .. "spread")))
+    screen.move(110, 60)
+    screen.text_center(string.format("%.2f", params:get(track .. "jitter")))
+  else
+    screen.text_center(string.format("%.2f", params:get(track .. "size")))
+    screen.move(110, 60)
+    screen.text_center(string.format("%.2f", params:get(track .. "density")))
+  end
+
+  screen.move(track == 3 and 100 or 90, 40)
+  screen.level(loops[track].state == 1 and 12 or 0)
+  screen.font_size(12)
+  screen.font_face(12)
+  screen.text("L")
+
+  screen.update()
+end
+
+-- arc
 
 function a.delta(n, d)
   if alt then
@@ -315,47 +368,4 @@ function arc_redraw()
     a:segment(4, 0.5, 0.5 + density, 15)
   end
   a:refresh()
-end
-
-
-function redraw()
-  screen.clear()
-  screen.move(64,40)
-  screen.level(params:get(track .. "play") == 2 and 15 or 3)
-  screen.font_face(10)
-  screen.font_size(30)
-  screen.text_center(tracks[track])
-  
-  if util.time() - time_last_enc < .6 and last_enc == 1 then
-    screen.move(10, 10)
-    screen.font_face(1)
-    screen.font_size(8)
-    screen.text("vol : " .. string.format("%.2f", params:get(track .. "volume")))
-  end
-  
-  screen.move(20, 60)
-  screen.font_size(8)
-  screen.font_face(1)
-  screen.text_center(string.format("%.2f", params:get(track .. "speed")))
-  screen.move(50, 60)
-  screen.text_center(string.format("%.2f", params:get(track .. "pitch")))
-  screen.move(80, 60)
-
-  if alt then
-    screen.text_center(string.format("%.2f", params:get(track .. "spread")))
-    screen.move(110, 60)
-    screen.text_center(string.format("%.2f", params:get(track .. "jitter")))
-  else
-    screen.text_center(string.format("%.2f", params:get(track .. "size")))
-    screen.move(110, 60)
-    screen.text_center(string.format("%.2f", params:get(track .. "density")))
-  end
-
-  screen.move(track == 3 and 100 or 90, 40)
-  screen.level(loops[track].state == 1 and 12 or 0)
-  screen.font_size(12)
-  screen.font_face(12)
-  screen.text("L")
-
-  screen.update()
 end
