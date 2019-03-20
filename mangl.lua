@@ -27,6 +27,8 @@
 --                voice
 -- norns key3 = next track
 --
+-- norns enc1 = volume
+--
 -- nb: key3 will only advance to
 -- the next track if there is a
 -- sample loaded. otherwise
