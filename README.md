@@ -10,7 +10,9 @@ engine: glut by @artfwo
 
 ---
 
-load samples via param menu
+load samples via param menu.
+
+---
 
 
 mangl is a 4 track granular
