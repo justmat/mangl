@@ -1,4 +1,4 @@
-# mangl
+# mangl v1
 
 ### arc required.
 
@@ -53,4 +53,6 @@ on press, loop out on release._
 
 ---
 
-@justmat v0.2
+@justmat
+
+llllllll.co/t/21066
