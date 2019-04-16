@@ -57,7 +57,6 @@
 --
 -- @justmat v0.3
 --
--- llllllll.co/t/21066
 
 engine.name = 'Glut'
 
@@ -280,27 +279,46 @@ end
 
 function redraw()
   screen.clear()
-  screen.move(64,40)
+  screen.move(64, 38)
   screen.level(params:get(track .. "play") == 2 and 15 or 3)
   screen.font_face(10)
   screen.font_size(30)
   screen.text_center(tracks[track])
-  
+
   if util.time() - time_last_enc < .6 and last_enc == 1 then
     screen.move(10, 10)
     screen.font_face(1)
     screen.font_size(8)
     screen.text("vol : " .. string.format("%.2f", params:get(track .. "volume")))
   end
-  
+
+  screen.move(20, 50)
+  screen.font_size(6)
+  screen.font_face(25)
+  screen.level(3)
+  screen.text_center("speed")
+  screen.move(50, 50)
+  screen.text_center("pitch")
+
+  screen.move(80, 50)
+  if alt then
+    screen.text_center("spread")
+    screen.move(110, 50)
+    screen.text_center("jitter")
+  else
+    screen.text_center("size")
+    screen.move(110, 50)
+    screen.text_center("density")
+  end
+
   screen.move(20, 60)
   screen.font_size(8)
   screen.font_face(1)
   screen.text_center(string.format("%.2f", params:get(track .. "speed")))
   screen.move(50, 60)
   screen.text_center(string.format("%.2f", params:get(track .. "pitch")))
-  screen.move(80, 60)
 
+  screen.move(80, 60)
   if alt then
     screen.text_center(string.format("%.2f", params:get(track .. "spread")))
     screen.move(110, 60)
@@ -311,7 +329,7 @@ function redraw()
     screen.text_center(string.format("%.2f", params:get(track .. "density")))
   end
 
-  screen.move(track == 3 and 100 or 90, 40)
+  screen.move(track == 3 and 100 or 90, 38)
   screen.level(loops[track].state == 1 and 12 or 0)
   screen.font_size(12)
   screen.font_face(12)
