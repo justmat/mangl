@@ -55,7 +55,7 @@
 --
 -- ----------
 --
--- @justmat v1.1
+-- @justmat v1
 --
 -- llllllll.co/t/21066
 
@@ -306,6 +306,7 @@ function redraw()
   screen.move(110, 50)
   screen.text_center(alt and "jitter" or "density")
 
+  screen.level(params:get(track .. "play") == 2 and 15 or 3)
   screen.move(20, 60)
   screen.font_size(8)
   screen.font_face(1)
