@@ -297,38 +297,26 @@ function redraw()
   screen.font_size(6)
   screen.font_face(25)
   screen.level(3)
-  screen.text_center("speed")
+  screen.text_center(alt and "scrub" or "speed")
   screen.move(50, 50)
   screen.text_center("pitch")
 
   screen.move(80, 50)
-  if alt then
-    screen.text_center("spread")
-    screen.move(110, 50)
-    screen.text_center("jitter")
-  else
-    screen.text_center("size")
-    screen.move(110, 50)
-    screen.text_center("density")
-  end
+  screen.text_center(alt and "spread" or "size")
+  screen.move(110, 50)
+  screen.text_center(alt and "jitter" or "density")
 
   screen.move(20, 60)
   screen.font_size(8)
   screen.font_face(1)
-  screen.text_center(string.format("%.2f", params:get(track .. "speed")))
+  screen.text_center(alt and "-" or string.format("%.2f", params:get(track .. "speed")))
   screen.move(50, 60)
   screen.text_center(string.format("%.2f", params:get(track .. "pitch")))
 
   screen.move(80, 60)
-  if alt then
-    screen.text_center(string.format("%.2f", params:get(track .. "spread")))
-    screen.move(110, 60)
-    screen.text_center(string.format("%.2f", params:get(track .. "jitter")))
-  else
-    screen.text_center(string.format("%.2f", params:get(track .. "size")))
-    screen.move(110, 60)
-    screen.text_center(string.format("%.2f", params:get(track .. "density")))
-  end
+  screen.text_center(string.format("%.2f", alt and params:get(track .. "spread") or params:get(track .. "size")))
+  screen.move(110, 60)
+  screen.text_center(string.format("%.2f", alt and params:get(track .. "jitter") or params:get(track .. "density")))
 
   screen.move(track == 3 and 100 or 90, 38)
   screen.level(loops[track].state == 1 and 12 or 0)
