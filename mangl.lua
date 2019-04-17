@@ -299,7 +299,7 @@ function redraw()
   screen.level(3)
   screen.text_center(alt and "scrub" or "speed")
   screen.move(50, 50)
-  screen.text_center("pitch")
+  screen.text_center(alt and "fine" or "pitch")
 
   screen.move(80, 50)
   screen.text_center(alt and "spread" or "size")
