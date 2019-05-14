@@ -158,12 +158,15 @@ function init()
 
   params:add_taper("reverb_damp", "*" .. sep .. "damp", 0, 100, 50, 0, "%")
   params:set_action("reverb_damp", function(value) engine.reverb_damp(value / 100) end)
-
+  
+  params:add_separator()
+  for i = 1, VOICES do
+    params:add_file(i .. "sample", i .. sep .. "sample")
+    params:set_action(i .. "sample", function(file) engine.read(i, file) end)
+  end
+  
   for v = 1, VOICES do
     params:add_separator()
-
-    params:add_file(v .. "sample", v .. sep .. "sample")
-    params:set_action(v .. "sample", function(file) engine.read(v, file) end)
 
     params:add_option(v .. "play", v .. sep .. "play", {"off","on"}, 1)
     params:set_action(v .. "play", function(x) engine.gate(v, x-1) end)
@@ -280,17 +283,24 @@ end
 
 function redraw()
   screen.clear()
-  screen.move(64, 38)
+  screen.move(123, 10)
+  screen.font_face(25)
+  screen.font_size(6)
+  screen.level(1)
+  screen.text_right(string.match(params:get(track .. "sample"), "/[^/]*$"))
+
+  screen.move(64, 36)
   screen.level(params:get(track .. "play") == 2 and 15 or 3)
   screen.font_face(10)
   screen.font_size(30)
   screen.text_center(tracks[track])
 
   if util.time() - time_last_enc < .6 and last_enc == 1 then
+    screen.level(2)
     screen.move(10, 10)
-    screen.font_face(1)
-    screen.font_size(8)
-    screen.text("vol : " .. string.format("%.2f", params:get(track .. "volume")))
+    screen.font_face(25)
+    screen.font_size(6)
+    screen.text(string.format("%.2f", params:get(track .. "volume")))
   end
 
   screen.move(20, 50)
@@ -319,7 +329,7 @@ function redraw()
   screen.move(110, 60)
   screen.text_center(string.format("%.2f", alt and params:get(track .. "jitter") or params:get(track .. "density")))
 
-  screen.move(track == 3 and 100 or 90, 38)
+  screen.move(track == 3 and 100 or 90, 36)
   screen.level(loops[track].state == 1 and 12 or 0)
   screen.font_size(12)
   screen.font_face(12)
