@@ -55,7 +55,7 @@
 --
 -- ----------
 --
--- @justmat v1.2
+-- @justmat v1.3
 --
 -- llllllll.co/t/21066
 
@@ -164,6 +164,9 @@ function init()
     params:add_file(i .. "sample", i .. sep .. "sample")
     params:set_action(i .. "sample", function(file) engine.read(i, file) end)
   end
+
+  params:add_separator()
+  params:add_option("alt_behavior", "alt behavior", {"momentary", "toggle"}, 1)
   
   for v = 1, VOICES do
     params:add_separator()
@@ -220,11 +223,14 @@ end
 function key(n, z)
   if n == 1 then
     hold_track_speed(track)
-    if z == 0 and was_playing then
+    if params:get("alt_behavior") == 1 then
+      alt = z == 1 and true or false
+    elseif z == 1 and params:get("alt_behavior") == 2 then
+      alt = not alt
+    elseif z == 0 and was_playing then
       params:set(track .. "speed", track_speed[track])
       was_playing = false
     end
-    alt = z == 1 and true or false
   end
 
   if alt then
@@ -287,11 +293,7 @@ function redraw()
   screen.font_face(25)
   screen.font_size(6)
   screen.level(1)
-  if params:get(track .. "sample") == "-" then
-
-  else
-    screen.text_right(string.match(params:get(track .. "sample"), "/[^/]*$"))
-  end
+  screen.text_right(string.match(params:get(track .. "sample"), "/[^/]*$"))
 
   screen.move(64, 36)
   screen.level(params:get(track .. "play") == 2 and 15 or 3)
