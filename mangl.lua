@@ -293,7 +293,11 @@ function redraw()
   screen.font_face(25)
   screen.font_size(6)
   screen.level(1)
-  screen.text_right(string.match(params:get(track .. "sample"), "/[^/]*$"))
+  if params:get(track .. "sample") == "-" then
+    screen.text_right("-")
+  else
+    screen.text_right(string.match(params:get(track .. "sample"), "/[^/]*$"))
+  end
 
   screen.move(64, 36)
   screen.level(params:get(track .. "play") == 2 and 15 or 3)
