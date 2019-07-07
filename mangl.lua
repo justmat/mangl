@@ -296,7 +296,7 @@ function redraw()
   if params:get(track .. "sample") == "-" then
     screen.text_right("-")
   else
-    screen.text_right(string.match(params:get(track .. "sample"), "/[^/]*$"))
+    screen.text_right(string.match(params:get(track .. "sample"), "[^/]*$"))
   end
 
   screen.move(64, 36)
