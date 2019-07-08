@@ -288,6 +288,7 @@ end
 
 
 function redraw()
+  screen.aa(1)
   screen.clear()
   screen.move(123, 10)
   screen.font_face(25)
