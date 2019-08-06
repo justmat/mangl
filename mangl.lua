@@ -89,14 +89,6 @@ local loop_in = {nil, nil, nil, nil}
 local loop_out = {nil, nil, nil, nil}
 
 
-local function scrub(n, d)
-  -- scrub playback position
-  params:set(n .. "speed", 0)
-  was_playing = true
-  engine.seek(n, positions[n] + d / scrub_sensitivity)
-end
-
-
 local function hold_track_speed(n)
   -- remember track speed and direction while scrubbing audio file
   local speed = params:get(n .. "speed")
@@ -108,6 +100,15 @@ local function hold_track_speed(n)
       loops[n].dir = 1
     end
   end
+end
+
+
+local function scrub(n, d)
+  -- scrub playback position
+  hold_track_speed(n)
+  params:set(n .. "speed", 0)
+  was_playing = true
+  engine.seek(n, positions[n] + d / scrub_sensitivity)
 end
 
 
@@ -355,6 +356,7 @@ function a.delta(n, d)
   if alt then
     if n == 1 then
       scrub(track, d)
+      params:set(n .. "speed", track_speed[n])
     elseif n == 2 then
       params:delta(track .. "pitch", d / 20)
     elseif n == 3 then
