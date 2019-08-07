@@ -72,6 +72,7 @@ local alt = false
 
 local last_enc = 0
 local time_last_enc = 0
+local time_last_scrub = 0
 
 local scrub_sensitivity = 450
 local was_playing = false
@@ -87,6 +88,11 @@ end
 
 local loop_in = {nil, nil, nil, nil}
 local loop_out = {nil, nil, nil, nil}
+
+
+local function set_speed(n)
+  params:set(n .. "speed", track_speed[n])
+end
 
 
 local function hold_track_speed(n)
@@ -228,9 +234,6 @@ function key(n, z)
       alt = z == 1 and true or false
     elseif z == 1 and params:get("alt_behavior") == 2 then
       alt = not alt
-    elseif z == 0 and was_playing then
-      params:set(track .. "speed", track_speed[track])
-      was_playing = false
     end
   end
 
@@ -264,6 +267,10 @@ function key(n, z)
       clear_loop(track)
     end
   else
+    if was_playing then
+      set_speed(track)
+      was_playing = false
+    end
     -- key 2 activates and deactivates the currently selected voice
     if n == 2 and z == 1 then
       params:set(track .. "play", params:get(track .. "play") == 2 and 1 or 2)
@@ -356,7 +363,6 @@ function a.delta(n, d)
   if alt then
     if n == 1 then
       scrub(track, d)
-      params:set(n .. "speed", track_speed[n])
     elseif n == 2 then
       params:delta(track .. "pitch", d / 20)
     elseif n == 3 then
@@ -367,7 +373,6 @@ function a.delta(n, d)
   else
     if n == 1 then
       params:delta(track .. "speed", d / 10)
-      hold_track_speed(track)
     elseif n == 2 then
       params:delta(track .. "pitch", d / 2)
     elseif n == 3 then
@@ -375,6 +380,15 @@ function a.delta(n, d)
     elseif n == 4 then
       params:delta(track .. "density", d / 10)
     end
+  end
+end
+
+
+function a.key(n, z)
+  -- for old push button arcs and 4e support
+  alt = z == 1 and true or false
+  if not alt and was_playing then
+    set_speed(track)
   end
 end
 
