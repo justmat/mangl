@@ -15,7 +15,7 @@ load samples via param menu.
 ---
 
 
-mangl is a 4 track granular
+mangl is a 7 track granular
 sample player.
 
 * arc ring 1 = speed
