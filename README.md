@@ -46,6 +46,10 @@ _nb: loop in/out is set in
 one button press. loop in
 on press, loop out on release._
 
+## grid
+
+![](assets/mangl.png)
+
 ---
 
 @justmat
