@@ -6,7 +6,7 @@
 
 based on angl
 by @tehn and the
-engine: glut by @artfwo
+engine/script, glut by @artfwo
 
 ---
 
@@ -26,13 +26,8 @@ sample player.
 * norns key1 = alt
 * norns key2 = enable/disable
                voice
-* norns key3 = next track
 * norns enc1 = track volume
-
-_nb: key3 will only advance to
-the next track if there is a
-sample loaded. otherwise
-returns to track 1._
+* norns enc3 = nav
 
 holding alt and turning a ring,
 or pressing a button,
