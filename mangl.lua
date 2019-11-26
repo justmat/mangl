@@ -1,12 +1,14 @@
 -- mangl
 --
--- arc required.
+-- arc suggested.
+-- grid capable.
 --
 -- ----------
 --
 -- based on the script angl
 -- by @tehn and the
--- engine: glut by @artfwo
+-- engine/script glut
+-- by @artfwo
 --
 -- ----------
 --
@@ -25,14 +27,10 @@
 -- norns key1 = alt
 -- norns key2 = enable/disable
 --                voice
--- norns key3 = next track
 --
 -- norns enc1 = volume
+-- norns enc3 = nav
 --
--- nb: key3 will only advance to
--- the next track if there is a
--- sample loaded. otherwise
--- returns to track 1.
 --
 -- ----------
 --
@@ -55,18 +53,44 @@
 --
 -- ----------
 --
--- @justmat v1.3
+-- @justmat v1.4
 --
 -- llllllll.co/t/21066
 
 engine.name = 'Glut'
 
 local a = arc.connect(1)
+local g = grid.connect(1)
+
+local gridbuf = require 'lib/gridbuf'
+local grid_ctl = gridbuf.new(16, 8)
+local grid_voc = gridbuf.new(16, 8)
 
 local tau = math.pi * 2
-local VOICES = 4
-local positions = {-1,-1,-1,-1}
-local tracks = {"one", "two", "three", "four"}
+
+local VOICES = 7
+
+local positions = {}
+local gates = {}
+local voice_levels = {}
+local track_speed = {}
+local loop_in = {}
+local loop_out = {}
+local loops = {}
+for i = 1, VOICES do
+  positions[i] = -1
+  track_speed[i] = 0
+  loop_in[i] = nil
+  loop_out[i] = nil
+  gates[i] = 0
+  voice_levels[i] = 0
+  loops[i] = {
+    state = 0,
+    dir = 1
+  }
+end
+
+local tracks = {"one", "two", "three", "four", "five", "six", "seven"}
 local track = 1
 local alt = false
 
@@ -76,18 +100,165 @@ local time_last_scrub = 0
 
 local scrub_sensitivity = 450
 local was_playing = false
-local track_speed = {0, 0, 0, 0}
 
-local loops = {}
-for i = 1, VOICES do
-  loops[i] = {
-    state = 0,
-    dir = 1
-  }
+local metro_grid_refresh
+local metro_blink
+
+-- pattern recorder. should likely be swapped out for pattern_time lib
+
+local pattern_banks = {}
+local pattern_timers = {}
+local pattern_leds = {} -- for displaying button presses
+local pattern_positions = {} -- playback positions
+local record_bank = -1
+local record_prevtime = -1
+local record_length = -1
+local alt = false
+local blink = 0
+local metro_blink
+
+
+local function record_event(x, y, z)
+  if record_bank > 0 then
+    -- record first event tick
+    local current_time = util.time()
+
+    if record_prevtime < 0 then
+      record_prevtime = current_time
+    end
+
+    local time_delta = current_time - record_prevtime
+    table.insert(pattern_banks[record_bank], {time_delta, x, y, z})
+    record_prevtime = current_time
+  end
 end
 
-local loop_in = {nil, nil, nil, nil}
-local loop_out = {nil, nil, nil, nil}
+
+local function start_playback(n)
+  pattern_timers[n]:start(0.001, 1) -- TODO: timer doesn't start immediately with zero
+end
+
+
+local function stop_playback(n)
+  pattern_timers[n]:stop()
+  pattern_positions[n] = 1
+end
+
+
+local function arm_recording(n)
+  record_bank = n
+end
+
+
+local function stop_recording()
+  local recorded_events = #pattern_banks[record_bank]
+
+  if recorded_events > 0 then
+    -- save last delta to first event
+    local current_time = util.time()
+    local final_delta = current_time - record_prevtime
+    pattern_banks[record_bank][1][1] = final_delta
+
+    start_playback(record_bank)
+  end
+
+  record_bank = -1
+  record_prevtime = -1
+end
+
+
+local function pattern_next(n)
+  local bank = pattern_banks[n]
+  local pos = pattern_positions[n]
+
+  local event = bank[pos]
+  local delta, x, y, z = table.unpack(event)
+  pattern_leds[n] = z
+  grid_key(x, y, z, true)
+
+  local next_pos = pos + 1
+  if next_pos > #bank then
+    next_pos = 1
+  end
+
+  local next_event = bank[next_pos]
+  local next_delta = next_event[1]
+  pattern_positions[n] = next_pos
+
+  -- schedule next event
+  pattern_timers[n]:start(next_delta, 1)
+end
+
+
+local function record_handler(n)
+  if alt then
+    -- clear pattern
+    if n == record_bank then stop_recording() end
+    if pattern_timers[n].is_running then stop_playback(n) end
+    pattern_banks[n] = {}
+    do return end
+  end
+
+  if n == record_bank then
+    -- stop if pressed current recording
+    stop_recording()
+  else
+    local pattern = pattern_banks[n]
+
+    if #pattern > 0 then
+      -- toggle playback if there's data
+      if pattern_timers[n].is_running then stop_playback(n) else start_playback(n) end
+    else
+      -- stop recording if it's happening
+      if record_bank > 0 then
+        stop_recording()
+      end
+      -- arm new pattern for recording
+      arm_recording(n)
+    end
+  end
+end
+
+-- internals
+
+local function display_voice(phase, width)
+  local pos = phase * width
+
+  local levels = {}
+  for i = 1, width do levels[i] = 0 end
+
+  local left = math.floor(pos)
+  local index_left = left + 1
+  local dist_left = math.abs(pos - left)
+
+  local right = math.floor(pos + 1)
+  local index_right = right + 1
+  local dist_right = math.abs(pos - right)
+
+  if index_left < 1 then index_left = width end
+  if index_left > width then index_left = 1 end
+
+  if index_right < 1 then index_right = width end
+  if index_right > width then index_right = 1 end
+
+  levels[index_left] = math.floor(math.abs(1 - dist_left) * 15)
+  levels[index_right] = math.floor(math.abs(1 - dist_right) * 15)
+
+  return levels
+end
+
+
+local function start_voice(voice, pos)
+  engine.seek(voice, pos)
+  engine.gate(voice, 1)
+  gates[voice] = 1
+end
+
+
+local function stop_voice(voice)
+  gates[voice] = 0
+  engine.gate(voice, 0)
+end
 
 
 local function set_speed(n)
@@ -144,87 +315,6 @@ function loop_pos()
   end
 end
 
-
-function init()
-  -- polls
-  for v = 1, VOICES do
-    local phase_poll = poll.set('phase_' .. v, function(pos) positions[v] = pos end)
-    phase_poll.time = 0.025
-    phase_poll:start()
-  end
-
-  params:add_separator()
-
-  local sep = ": "
-
-  params:add_taper("reverb_mix", "*" .. sep .. "mix", 0, 100, 20, 0, "%")
-  params:set_action("reverb_mix", function(value) engine.reverb_mix(value / 100) end)
-
-  params:add_taper("reverb_room", "*" .. sep .. "room", 0, 100, 50, 0, "%")
-  params:set_action("reverb_room", function(value) engine.reverb_room(value / 100) end)
-
-  params:add_taper("reverb_damp", "*" .. sep .. "damp", 0, 100, 50, 0, "%")
-  params:set_action("reverb_damp", function(value) engine.reverb_damp(value / 100) end)
-  
-  params:add_separator()
-  for i = 1, VOICES do
-    params:add_file(i .. "sample", i .. sep .. "sample")
-    params:set_action(i .. "sample", function(file) engine.read(i, file) end)
-  end
-
-  params:add_separator()
-  params:add_option("alt_behavior", "alt behavior", {"momentary", "toggle"}, 1)
-  
-  for v = 1, VOICES do
-    params:add_separator()
-
-    params:add_option(v .. "play", v .. sep .. "play", {"off","on"}, 1)
-    params:set_action(v .. "play", function(x) engine.gate(v, x-1) end)
-
-    params:add_taper(v .. "volume", v .. sep .. "volume", -60, 20, -12, 0, "dB")
-    params:set_action(v .. "volume", function(value) engine.volume(v, math.pow(10, value / 20)) end)
-
-    params:add_taper(v .. "speed", v .. sep .. "speed", -300, 300, 0, 0, "%")
-    params:set_action(v .. "speed", function(value) engine.speed(v, value / 100) end)
-
-    params:add_taper(v .. "jitter", v .. sep .. "jitter", 0, 500, 0, 5, "ms")
-    params:set_action(v .. "jitter", function(value) engine.jitter(v, value / 1000) end)
-
-    params:add_taper(v .. "size", v .. sep .. "size", 1, 500, 100, 5, "ms")
-    params:set_action(v .. "size", function(value) engine.size(v, value / 1000) end)
-
-    params:add_taper(v .. "density", v .. sep .. "density", 0, 512, 20, 6, "hz")
-    params:set_action(v .. "density", function(value) engine.density(v, value) end)
-
-    params:add_taper(v .. "pitch", v .. sep .. "pitch", -24, 24, 0, 0, "st")
-    params:set_action(v .. "pitch", function(value) engine.pitch(v, math.pow(0.5, -value / 12)) end)
-
-    params:add_taper(v .. "spread", v .. sep .. "spread", 0, 100, 0, 0, "%")
-    params:set_action(v .. "spread", function(value) engine.spread(v, value / 100) end)
-
-    params:add_taper(v .. "fade", v .. sep .. "att / dec", 1, 9000, 1000, 3, "ms")
-    params:set_action(v .. "fade", function(value) engine.envscale(v, value / 1000) end)
-  end
-
-  params:read()
-  params:bang()
-  -- arc redraw metro
-  local arc_redraw_timer = metro.init()
-  arc_redraw_timer.time = 0.025
-  arc_redraw_timer.event = function() arc_redraw() end
-  arc_redraw_timer:start()
-  -- norns redraw metro
-  local norns_redraw_timer = metro.init()
-  norns_redraw_timer.time = 0.025
-  norns_redraw_timer.event = function() redraw() end
-  norns_redraw_timer:start()
-  -- loop metro
-  local loop_timer = metro.init()
-  loop_timer.time = 0.005
-  loop_timer.event = function() loop_pos() end
-  loop_timer:start()
-end
-
 -- norns
 
 function key(n, z)
@@ -274,13 +364,9 @@ function key(n, z)
     -- key 2 activates and deactivates the currently selected voice
     if n == 2 and z == 1 then
       params:set(track .. "play", params:get(track .. "play") == 2 and 1 or 2)
-    -- key 3 advances track, or wraps to 1 if no sample is loaded
+    -- key 3 sets speed to 0
     elseif n == 3 and z == 1 then
-      if params:get((track % VOICES) + 1 .. "sample") == "-" then
-        track = 1
-      else
-        track = (track % VOICES) + 1
-      end
+      params:set(track .. "speed", 0)
     end
   end
 end
@@ -289,6 +375,8 @@ end
 function enc(n, d)
   if n == 1 then
     params:delta(track .. "volume", d)
+  elseif n == 3 then
+    track = util.clamp(track + d, 1, 7)
   end
   last_enc = n
   time_last_enc = util.time()
@@ -348,7 +436,16 @@ function redraw()
   screen.move(110, 60)
   screen.text_center(string.format("%.2f", alt and params:get(track .. "jitter") or params:get(track .. "density")))
 
-  screen.move(track == 3 and 100 or 90, 36)
+  if track == 3 then
+    screen.move(100, 36)
+  elseif track == 6 then
+    screen.move(84, 36)
+  elseif track == 7 then
+    screen.move(103, 36)
+  else
+    screen.move(90, 36)
+  end
+
   screen.level(loops[track].state == 1 and 12 or 0)
   screen.font_size(12)
   screen.font_face(12)
@@ -357,7 +454,7 @@ function redraw()
   screen.update()
 end
 
--- arc
+-- arc ----------
 
 function a.delta(n, d)
   if alt then
@@ -392,7 +489,6 @@ function a.key(n, z)
   end
 end
 
-
 function arc_redraw()
   a:all(0)
   a:segment(1, positions[track] * tau, tau * positions[track] + 0.2, 15)
@@ -415,3 +511,205 @@ function arc_redraw()
   end
   a:refresh()
 end
+
+-- grid ----------
+
+function grid_key(x, y, z, skip_record)
+  
+  if y > 1 or (y == 1 and x < 9) then
+    if not skip_record then
+      record_event(x, y, z)
+    end
+  end
+  -- track selection via grid press
+  if y >= 2 and not skip_record then
+    track = y - 1
+    if alt then
+      --params:set(track .. "play", 1)
+      params:set(track .. "speed", 0)
+    else
+      params:set(track .. "play", 2)
+    end
+  end
+  
+  if z > 0 then
+    -- set voice pos
+    if y > 1 then
+      local voice = y - 1
+      start_voice(voice, (x - 1) / 16)
+    else
+      if x == 16 then
+        -- alt
+        alt = true
+      elseif x > 8 then
+        record_handler(x - 8)
+      elseif x == 8 then
+        -- reserved
+      elseif x < 8 then
+        -- stop
+        local voice = x
+        stop_voice(voice)
+        params:set(track .. "play", 1)
+      end
+    end
+  else
+    -- alt
+    if x == 16 and y == 1 then alt = false end
+  end
+end
+
+
+local function grid_refresh()
+  if g == nil then
+    return
+  end
+
+  grid_ctl:led_level_all(0)
+  grid_voc:led_level_all(0)
+
+  -- alt
+  grid_ctl:led_level_set(16, 1, alt and 15 or 1)
+
+  -- pattern banks
+  for i=1, VOICES do
+    local level = 2
+
+    if #pattern_banks[i] > 0 then level = 5 end
+    if pattern_timers[i].is_running then
+      level = 10
+      if pattern_leds[i] > 0 then
+        level = 12
+      end
+    end
+
+    grid_ctl:led_level_set(8 + i, 1, level)
+  end
+
+  -- blink armed pattern
+  if record_bank > 0 then
+      grid_ctl:led_level_set(8 + record_bank, 1, 15 * blink)
+  end
+
+  -- voices
+  for i=1, VOICES do
+    if voice_levels[i] > 0 then
+      grid_ctl:led_level_set(i, 1, math.min(math.ceil(voice_levels[i] * 15), 15))
+      grid_voc:led_level_row(1, i + 1, display_voice(positions[i], 16))
+    end
+  end
+
+  local buf = grid_ctl | grid_voc
+  buf:render(g)
+  g:refresh()
+end
+
+
+-- init ----------
+
+function init()
+  g.key = function(x, y, z)
+    grid_key(x, y, z)
+  end
+  
+  -- polls
+  for v = 1, VOICES do
+    local phase_poll = poll.set('phase_' .. v, function(pos) positions[v] = pos end)
+    phase_poll.time = 0.025
+    phase_poll:start()
+
+    local level_poll = poll.set('level_' .. v, function(lvl) voice_levels[v] = lvl end)
+    level_poll.time = 0.05
+    level_poll:start()
+  end
+    
+  -- recorders
+  for v = 1, VOICES do
+    table.insert(pattern_timers, metro.init(function(tick) pattern_next(v) end))
+    table.insert(pattern_banks, {})
+    table.insert(pattern_leds, 0)
+    table.insert(pattern_positions, 1)
+  end
+  
+  params:add_separator()
+
+  local sep = ": "
+
+  params:add_taper("reverb_mix", "*" .. sep .. "mix", 0, 100, 20, 0, "%")
+  params:set_action("reverb_mix", function(value) engine.reverb_mix(value / 100) end)
+
+  params:add_taper("reverb_room", "*" .. sep .. "room", 0, 100, 50, 0, "%")
+  params:set_action("reverb_room", function(value) engine.reverb_room(value / 100) end)
+
+  params:add_taper("reverb_damp", "*" .. sep .. "damp", 0, 100, 50, 0, "%")
+  params:set_action("reverb_damp", function(value) engine.reverb_damp(value / 100) end)
+  
+  params:add_separator()
+  for i = 1, VOICES do
+    params:add_file(i .. "sample", i .. sep .. "sample")
+    params:set_action(i .. "sample", function(file) engine.read(i, file) end)
+  end
+
+  params:add_separator()
+  params:add_option("alt_behavior", "alt behavior", {"momentary", "toggle"}, 1)
+  
+  for v = 1, VOICES do
+    params:add_separator()
+
+    params:add_option(v .. "play", v .. sep .. "play", {"off","on"}, 1)
+    params:set_action(v .. "play", function(x) engine.gate(v, x-1) end)
+
+    params:add_taper(v .. "volume", v .. sep .. "volume", -60, 20, -12, 0, "dB")
+    params:set_action(v .. "volume", function(value) engine.volume(v, math.pow(10, value / 20)) end)
+
+    params:add_taper(v .. "speed", v .. sep .. "speed", -300, 300, 0, 0, "%")
+    params:set_action(v .. "speed", function(value) engine.speed(v, value / 100) end)
+
+    params:add_taper(v .. "jitter", v .. sep .. "jitter", 0, 500, 0, 5, "ms")
+    params:set_action(v .. "jitter", function(value) engine.jitter(v, value / 1000) end)
+
+    params:add_taper(v .. "size", v .. sep .. "size", 1, 500, 100, 5, "ms")
+    params:set_action(v .. "size", function(value) engine.size(v, value / 1000) end)
+
+    params:add_taper(v .. "density", v .. sep .. "density", 0, 512, 20, 6, "hz")
+    params:set_action(v .. "density", function(value) engine.density(v, value) end)
+
+    params:add_taper(v .. "pitch", v .. sep .. "pitch", -24, 24, 0, 0, "st")
+    params:set_action(v .. "pitch", function(value) engine.pitch(v, math.pow(0.5, -value / 12)) end)
+
+    params:add_taper(v .. "spread", v .. sep .. "spread", 0, 100, 0, 0, "%")
+    params:set_action(v .. "spread", function(value) engine.spread(v, value / 100) end)
+
+    params:add_taper(v .. "fade", v .. sep .. "att / dec", 1, 9000, 1000, 3, "ms")
+    params:set_action(v .. "fade", function(value) engine.envscale(v, value / 1000) end)
+  end
+
+  params:read()
+  params:bang()
+  -- grid refresh timer, 40 fps
+  metro_grid_refresh = metro.init(function(stage) grid_refresh() end, 1 / 40)
+  metro_grid_refresh:start()
+
+  metro_blink = metro.init(function(stage) blink = blink ~ 1 end, 1 / 4)
+  metro_blink:start()
+  -- arc redraw metro
+  local arc_redraw_timer = metro.init()
+  arc_redraw_timer.time = 0.025
+  arc_redraw_timer.event = function() arc_redraw() end
+  arc_redraw_timer:start()
+  -- norns redraw metro
+  local norns_redraw_timer = metro.init()
+  norns_redraw_timer.time = 0.025
+  norns_redraw_timer.event = function() redraw() end
+  norns_redraw_timer:start()
+  -- loop metro
+  local loop_timer = metro.init()
+  loop_timer.time = 0.005
+  loop_timer.event = function() loop_pos() end
+  loop_timer:start()
+end
+
+
+function cleanup()
+  poll.clear_all()
+end
+
