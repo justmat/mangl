@@ -549,7 +549,7 @@ function grid_key(x, y, z, skip_record)
         -- stop
         local voice = x
         stop_voice(voice)
-        params:set(track .. "play", 1)
+        params:set(voice .. "play", 1)
       end
     end
   else
