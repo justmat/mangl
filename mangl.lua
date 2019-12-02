@@ -710,6 +710,9 @@ function init()
   loop_timer.time = 0.005
   loop_timer.event = function() loop_pos() end
   loop_timer:start()
+
+  norns.enc.sens(3, 8)
+  norns.enc.accel(3, false)
 end
 
 
