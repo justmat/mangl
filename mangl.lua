@@ -546,10 +546,14 @@ function grid_key(x, y, z, skip_record)
       elseif x == 8 then
         -- reserved
       elseif x < 8 then
-        -- stop
         local voice = x
-        stop_voice(voice)
-        params:set(voice .. "play", 1)
+        if alt then
+        -- stop
+          stop_voice(voice)
+          params:set(voice .. "play", 1)
+        else
+          track = voice
+        end
       end
     end
   else
