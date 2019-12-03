@@ -596,6 +596,11 @@ local function grid_refresh()
 
   -- voices
   for i=1, VOICES do
+    if i == track then
+      grid_ctl:led_level_set(i, 1, 6)
+    else
+      grid_ctl:led_level_set(i, 1, 2)
+    end
     if voice_levels[i] > 0 then
       grid_ctl:led_level_set(i, 1, math.min(math.ceil(voice_levels[i] * 15), 15))
       grid_voc:led_level_row(1, i + 1, display_voice(positions[i], 16))
