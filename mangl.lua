@@ -393,7 +393,9 @@ function redraw()
   if params:get(track .. "sample") == "-" then
     screen.text_right("-")
   else
-    screen.text_right(string.match(params:get(track .. "sample"), "[^/]*$"))
+    local long_name = string.match(params:get(track .. "sample"), "[^/]*$")
+    local short_name = string.match(long_name, "(.+)%..+$")
+    screen.text_right(short_name)
   end
 
   screen.move(64, 36)
