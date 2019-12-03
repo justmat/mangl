@@ -572,7 +572,7 @@ local function grid_refresh()
   grid_voc:led_level_all(0)
 
   -- alt
-  grid_ctl:led_level_set(16, 1, alt and 15 or 1)
+  grid_ctl:led_level_set(16, 1, alt and 15 or 2)
 
   -- pattern banks
   for i=1, VOICES do
