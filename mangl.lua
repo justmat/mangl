@@ -395,7 +395,11 @@ function redraw()
   else
     local long_name = string.match(params:get(track .. "sample"), "[^/]*$")
     local short_name = string.match(long_name, "(.+)%..+$")
-    screen.text_right(short_name)
+    local final_name = short_name
+    if string.len(short_name) >= 15 then
+      final_name = string.sub(short_name, 1, 4) .. '...' .. string.sub(short_name, -4)
+    end
+    screen.text_right(final_name)
   end
 
   screen.move(64, 36)
