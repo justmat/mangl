@@ -576,11 +576,11 @@ local function grid_refresh()
 
   -- pattern banks
   for i=1, VOICES do
-    local level = 2
+    local level = 4
 
-    if #pattern_banks[i] > 0 then level = 5 end
+    if #pattern_banks[i] > 0 then level = 8 end
     if pattern_timers[i].is_running then
-      level = 10
+      level = 12
       if pattern_leds[i] > 0 then
         level = 12
       end
