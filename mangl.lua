@@ -597,7 +597,7 @@ local function grid_refresh()
   -- voices
   for i=1, VOICES do
     if i == track then
-      grid_ctl:led_level_set(i, 1, 6)
+      grid_ctl:led_level_set(i, 1, 4)
     else
       grid_ctl:led_level_set(i, 1, 2)
     end
