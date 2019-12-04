@@ -115,6 +115,19 @@ for i = 1, VOICES do
   table.insert(lfo_targets, i .. "jitter")
 end
 
+
+local function get_sample_name()
+  -- strips the path and extension from filenames
+  -- if filename is over 15 chars, returns a folded filename
+  local long_name = string.match(params:get(track .. "sample"), "[^/]*$")
+  local short_name = string.match(long_name, "(.+)%..+$")
+  if string.len(short_name) >= 15 then
+    return string.sub(short_name, 1, 4) .. '...' .. string.sub(short_name, -4)
+  else
+    return short_name
+  end
+end
+
 -- pattern recorder. should likely be swapped out for pattern_time lib
 
 local pattern_banks = {}
@@ -543,15 +556,7 @@ function redraw()
   if params:get(track .. "sample") == "-" then
     screen.text_right("-")
   else
-    local long_name = string.match(params:get(track .. "sample"), "[^/]*$")
-    local short_name = string.match(long_name, "(.+)%..+$")
-    local final_name = ''
-    if string.len(short_name) >= 15 then
-      final_name = string.sub(short_name, 1, 4) .. '...' .. string.sub(short_name, -4)
-    else
-      final_name = short_name
-    end
-    screen.text_right(final_name)
+    screen.text_right(get_sample_name())
   end
 
   screen.move(64, 36)
