@@ -109,6 +109,7 @@ local metro_blink
 
 local lfo_targets = {"none"}
 for i = 1, VOICES do
+  table.insert(lfo_targets, i .. "volume")
   table.insert(lfo_targets, i .. "size")
   table.insert(lfo_targets, i .. "density")
   table.insert(lfo_targets, i .. "spread")
@@ -251,8 +252,11 @@ function lfo.process()
     local target = params:get(i .. "lfo_target")
     local target_name = string.sub(lfo_targets[target], 2)
     if params:get(i .. "lfo") == 2 then
+      -- volume
+      if target_name == "volume" then
+        params:set(lfo_targets[target], lfo.scale(lfo[i].slope, -1.0, 2.0, -60, 20))
       -- size
-      if target_name == "size" then
+      elseif target_name == "size" then
         params:set(lfo_targets[target], lfo.scale(lfo[i].slope, -1.0, 2.0, 1, 500))
       -- density
       elseif target_name == "density" then
