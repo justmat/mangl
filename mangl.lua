@@ -61,6 +61,7 @@ engine.name = 'Glut'
 
 local a = arc.connect(1)
 local g = grid.connect(1)
+local lfo = include 'otis/lib/hnds'
 
 local gridbuf = require 'lib/gridbuf'
 local grid_ctl = gridbuf.new(16, 8)
@@ -104,6 +105,16 @@ local was_playing = false
 local metro_grid_refresh
 local metro_blink
 
+-- for lib/hnds
+
+local lfo_targets = {"none"}
+for i = 1, VOICES do
+  table.insert(lfo_targets, i .. "volume")
+  table.insert(lfo_targets, i .. "size")
+  table.insert(lfo_targets, i .. "density")
+  table.insert(lfo_targets, i .. "spread")
+  table.insert(lfo_targets, i .. "jitter")
+end
 -- pattern recorder. should likely be swapped out for pattern_time lib
 
 local pattern_banks = {}
@@ -219,6 +230,20 @@ local function record_handler(n)
   end
 end
 
+-- for hnds
+
+function lfo.process()
+  -- for lib hnds
+  for i = 1, 4 do
+    local target = params:get(i .. "lfo_target")
+
+    if params:get(i .. "lfo") == 2 then
+      -- size
+      params:set(lfo_targets[target], lfo.scale(lfo[i].slope, -4, 3, 0.0, 512.0))
+    end
+  end
+end
+
 -- internals
 
 local function display_voice(phase, width)
@@ -313,6 +338,120 @@ function loop_pos()
       end
     end
   end
+end
+
+
+-- init ----------
+
+function init()
+  g.key = function(x, y, z)
+    grid_key(x, y, z)
+  end
+  
+  -- polls
+  for v = 1, VOICES do
+    local phase_poll = poll.set('phase_' .. v, function(pos) positions[v] = pos end)
+    phase_poll.time = 0.025
+    phase_poll:start()
+
+    local level_poll = poll.set('level_' .. v, function(lvl) voice_levels[v] = lvl end)
+    level_poll.time = 0.05
+    level_poll:start()
+  end
+    
+  -- recorders
+  for v = 1, VOICES do
+    table.insert(pattern_timers, metro.init(function(tick) pattern_next(v) end))
+    table.insert(pattern_banks, {})
+    table.insert(pattern_leds, 0)
+    table.insert(pattern_positions, 1)
+  end
+  
+  params:add_separator()
+
+  local sep = ": "
+
+  params:add_taper("reverb_mix", "*" .. sep .. "mix", 0, 100, 20, 0, "%")
+  params:set_action("reverb_mix", function(value) engine.reverb_mix(value / 100) end)
+
+  params:add_taper("reverb_room", "*" .. sep .. "room", 0, 100, 50, 0, "%")
+  params:set_action("reverb_room", function(value) engine.reverb_room(value / 100) end)
+
+  params:add_taper("reverb_damp", "*" .. sep .. "damp", 0, 100, 50, 0, "%")
+  params:set_action("reverb_damp", function(value) engine.reverb_damp(value / 100) end)
+  
+  params:add_separator()
+  for i = 1, VOICES do
+    params:add_file(i .. "sample", i .. sep .. "sample")
+    params:set_action(i .. "sample", function(file) engine.read(i, file) end)
+  end
+
+  params:add_separator()
+  params:add_option("alt_behavior", "alt behavior", {"momentary", "toggle"}, 1)
+  
+  for v = 1, VOICES do
+    params:add_separator()
+
+    params:add_option(v .. "play", v .. sep .. "play", {"off","on"}, 1)
+    params:set_action(v .. "play", function(x) engine.gate(v, x-1) end)
+
+    params:add_taper(v .. "volume", v .. sep .. "volume", -60, 20, -12, 0, "dB")
+    params:set_action(v .. "volume", function(value) engine.volume(v, math.pow(10, value / 20)) end)
+
+    params:add_taper(v .. "speed", v .. sep .. "speed", -300, 300, 0, 0, "%")
+    params:set_action(v .. "speed", function(value) engine.speed(v, value / 100) end)
+
+    params:add_taper(v .. "jitter", v .. sep .. "jitter", 0, 500, 0, 5, "ms")
+    params:set_action(v .. "jitter", function(value) engine.jitter(v, value / 1000) end)
+
+    params:add_taper(v .. "size", v .. sep .. "size", 1, 500, 100, 5, "ms")
+    params:set_action(v .. "size", function(value) engine.size(v, value / 1000) end)
+
+    params:add_taper(v .. "density", v .. sep .. "density", 0, 512, 20, 6, "hz")
+    params:set_action(v .. "density", function(value) engine.density(v, value) end)
+
+    params:add_taper(v .. "pitch", v .. sep .. "pitch", -24, 24, 0, 0, "st")
+    params:set_action(v .. "pitch", function(value) engine.pitch(v, math.pow(0.5, -value / 12)) end)
+
+    params:add_taper(v .. "spread", v .. sep .. "spread", 0, 100, 0, 0, "%")
+    params:set_action(v .. "spread", function(value) engine.spread(v, value / 100) end)
+
+    params:add_taper(v .. "fade", v .. sep .. "att / dec", 1, 9000, 1000, 3, "ms")
+    params:set_action(v .. "fade", function(value) engine.envscale(v, value / 1000) end)
+  end
+
+  -- for hnds
+  for i = 1, 4 do
+    lfo[i].lfo_targets = lfo_targets
+  end
+  lfo.init()
+  
+  params:read()
+  params:bang()
+  -- grid refresh timer, 40 fps
+  metro_grid_refresh = metro.init(function(stage) grid_refresh() end, 1 / 40)
+  metro_grid_refresh:start()
+
+  metro_blink = metro.init(function(stage) blink = blink ~ 1 end, 1 / 4)
+  metro_blink:start()
+  -- arc redraw metro
+  local arc_redraw_timer = metro.init()
+  arc_redraw_timer.time = 0.025
+  arc_redraw_timer.event = function() arc_redraw() end
+  arc_redraw_timer:start()
+  -- norns redraw metro
+  local norns_redraw_timer = metro.init()
+  norns_redraw_timer.time = 0.025
+  norns_redraw_timer.event = function() redraw() end
+  norns_redraw_timer:start()
+  -- loop metro
+  local loop_timer = metro.init()
+  loop_timer.time = 0.005
+  loop_timer.event = function() loop_pos() end
+  loop_timer:start()
+
+  norns.enc.sens(3, 8)
+  norns.enc.accel(3, false)
 end
 
 -- norns
@@ -571,7 +710,7 @@ function grid_key(x, y, z, skip_record)
 end
 
 
-local function grid_refresh()
+function grid_refresh()
   if g == nil then
     return
   end
@@ -618,114 +757,6 @@ local function grid_refresh()
   local buf = grid_ctl | grid_voc
   buf:render(g)
   g:refresh()
-end
-
-
--- init ----------
-
-function init()
-  g.key = function(x, y, z)
-    grid_key(x, y, z)
-  end
-  
-  -- polls
-  for v = 1, VOICES do
-    local phase_poll = poll.set('phase_' .. v, function(pos) positions[v] = pos end)
-    phase_poll.time = 0.025
-    phase_poll:start()
-
-    local level_poll = poll.set('level_' .. v, function(lvl) voice_levels[v] = lvl end)
-    level_poll.time = 0.05
-    level_poll:start()
-  end
-    
-  -- recorders
-  for v = 1, VOICES do
-    table.insert(pattern_timers, metro.init(function(tick) pattern_next(v) end))
-    table.insert(pattern_banks, {})
-    table.insert(pattern_leds, 0)
-    table.insert(pattern_positions, 1)
-  end
-  
-  params:add_separator()
-
-  local sep = ": "
-
-  params:add_taper("reverb_mix", "*" .. sep .. "mix", 0, 100, 20, 0, "%")
-  params:set_action("reverb_mix", function(value) engine.reverb_mix(value / 100) end)
-
-  params:add_taper("reverb_room", "*" .. sep .. "room", 0, 100, 50, 0, "%")
-  params:set_action("reverb_room", function(value) engine.reverb_room(value / 100) end)
-
-  params:add_taper("reverb_damp", "*" .. sep .. "damp", 0, 100, 50, 0, "%")
-  params:set_action("reverb_damp", function(value) engine.reverb_damp(value / 100) end)
-  
-  params:add_separator()
-  for i = 1, VOICES do
-    params:add_file(i .. "sample", i .. sep .. "sample")
-    params:set_action(i .. "sample", function(file) engine.read(i, file) end)
-  end
-
-  params:add_separator()
-  params:add_option("alt_behavior", "alt behavior", {"momentary", "toggle"}, 1)
-  
-  for v = 1, VOICES do
-    params:add_separator()
-
-    params:add_option(v .. "play", v .. sep .. "play", {"off","on"}, 1)
-    params:set_action(v .. "play", function(x) engine.gate(v, x-1) end)
-
-    params:add_taper(v .. "volume", v .. sep .. "volume", -60, 20, -12, 0, "dB")
-    params:set_action(v .. "volume", function(value) engine.volume(v, math.pow(10, value / 20)) end)
-
-    params:add_taper(v .. "speed", v .. sep .. "speed", -300, 300, 0, 0, "%")
-    params:set_action(v .. "speed", function(value) engine.speed(v, value / 100) end)
-
-    params:add_taper(v .. "jitter", v .. sep .. "jitter", 0, 500, 0, 5, "ms")
-    params:set_action(v .. "jitter", function(value) engine.jitter(v, value / 1000) end)
-
-    params:add_taper(v .. "size", v .. sep .. "size", 1, 500, 100, 5, "ms")
-    params:set_action(v .. "size", function(value) engine.size(v, value / 1000) end)
-
-    params:add_taper(v .. "density", v .. sep .. "density", 0, 512, 20, 6, "hz")
-    params:set_action(v .. "density", function(value) engine.density(v, value) end)
-
-    params:add_taper(v .. "pitch", v .. sep .. "pitch", -24, 24, 0, 0, "st")
-    params:set_action(v .. "pitch", function(value) engine.pitch(v, math.pow(0.5, -value / 12)) end)
-
-    params:add_taper(v .. "spread", v .. sep .. "spread", 0, 100, 0, 0, "%")
-    params:set_action(v .. "spread", function(value) engine.spread(v, value / 100) end)
-
-    params:add_taper(v .. "fade", v .. sep .. "att / dec", 1, 9000, 1000, 3, "ms")
-    params:set_action(v .. "fade", function(value) engine.envscale(v, value / 1000) end)
-  end
-
-  params:read()
-  params:bang()
-  -- grid refresh timer, 40 fps
-  metro_grid_refresh = metro.init(function(stage) grid_refresh() end, 1 / 40)
-  metro_grid_refresh:start()
-
-  metro_blink = metro.init(function(stage) blink = blink ~ 1 end, 1 / 4)
-  metro_blink:start()
-  -- arc redraw metro
-  local arc_redraw_timer = metro.init()
-  arc_redraw_timer.time = 0.025
-  arc_redraw_timer.event = function() arc_redraw() end
-  arc_redraw_timer:start()
-  -- norns redraw metro
-  local norns_redraw_timer = metro.init()
-  norns_redraw_timer.time = 0.025
-  norns_redraw_timer.event = function() redraw() end
-  norns_redraw_timer:start()
-  -- loop metro
-  local loop_timer = metro.init()
-  loop_timer.time = 0.005
-  loop_timer.event = function() loop_pos() end
-  loop_timer:start()
-
-  norns.enc.sens(3, 8)
-  norns.enc.accel(3, false)
 end
 
 
