@@ -61,7 +61,7 @@ engine.name = 'Glut'
 
 local a = arc.connect(1)
 local g = grid.connect(1)
-local lfo = include 'otis/lib/hnds'
+local lfo = include 'lib/hnds_mangl'
 
 local gridbuf = require 'lib/gridbuf'
 local grid_ctl = gridbuf.new(16, 8)
@@ -109,12 +109,12 @@ local metro_blink
 
 local lfo_targets = {"none"}
 for i = 1, VOICES do
-  table.insert(lfo_targets, i .. "volume")
   table.insert(lfo_targets, i .. "size")
   table.insert(lfo_targets, i .. "density")
   table.insert(lfo_targets, i .. "spread")
   table.insert(lfo_targets, i .. "jitter")
 end
+
 -- pattern recorder. should likely be swapped out for pattern_time lib
 
 local pattern_banks = {}
@@ -236,10 +236,21 @@ function lfo.process()
   -- for lib hnds
   for i = 1, 4 do
     local target = params:get(i .. "lfo_target")
-
+    local target_name = string.sub(lfo_targets[target], 2)
     if params:get(i .. "lfo") == 2 then
       -- size
-      params:set(lfo_targets[target], lfo.scale(lfo[i].slope, -4, 3, 0.0, 512.0))
+      if target_name == "size" then
+        params:set(lfo_targets[target], lfo.scale(lfo[i].slope, -1.0, 2.0, 1, 500))
+      -- density
+      elseif target_name == "density" then
+        params:set(lfo_targets[target], lfo.scale(lfo[i].slope, -1.0, 2.0, 0, 512))
+      -- spread
+      elseif target_name == "spread" then
+        params:set(lfo_targets[target], lfo.scale(lfo[i].slope, -1.0, 2.0, 0, 100))
+      -- jitter
+      elseif target_name == "jitter" then
+        params:set(lfo_targets[target], lfo.scale(lfo[i].slope, -1.0, 2.0, 0, 500))
+      end
     end
   end
 end
