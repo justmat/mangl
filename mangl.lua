@@ -692,10 +692,9 @@ function grid_key(x, y, z, skip_record)
   if y >= 2 and not skip_record then
     track = y - 1
     if alt then
-      --params:set(track .. "play", 1)
-      params:set(track .. "speed", 0)
-    else
       params:set(track .. "play", 2)
+    else
+      params:set(track .. "play", z == 1 and 2 or 1)
     end
   end
   
