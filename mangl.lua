@@ -94,7 +94,7 @@ end
 local tracks = {"one", "two", "three", "four", "five", "six", "seven"}
 local track = 1
 local alt = false
-local latched = false
+local latched = true
 
 local last_enc = 0
 local time_last_enc = 0
