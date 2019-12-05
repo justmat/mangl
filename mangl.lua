@@ -94,6 +94,7 @@ end
 local tracks = {"one", "two", "three", "four", "five", "six", "seven"}
 local track = 1
 local alt = false
+local latched = false
 
 local last_enc = 0
 local time_last_enc = 0
@@ -691,10 +692,13 @@ function grid_key(x, y, z, skip_record)
   -- track selection via grid press
   if y >= 2 and not skip_record then
     track = y - 1
-    if alt then
+    if alt and z == 1 then
       params:set(track .. "play", 2)
+      latched = not latched
     else
-      params:set(track .. "play", z == 1 and 2 or 1)
+      if latched == false then
+        params:set(track .. "play", z == 1 and 2 or 1)
+      end
     end
   end
   
