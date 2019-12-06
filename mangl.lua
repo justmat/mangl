@@ -101,11 +101,15 @@ local last_enc = 0
 local time_last_enc = 0
 local time_last_scrub = 0
 
-local scrub_sensitivity = 500
 local was_playing = false
 
 local metro_grid_refresh
 local metro_blink
+
+-- arc sensitivity settings
+
+local scrub_sens = 500
+local speed_sens 
 
 -- for lib/hnds
 
@@ -312,7 +316,7 @@ local function scrub(n, d)
   hold_track_speed(n)
   params:set(n .. "speed", 0)
   was_playing = true
-  engine.seek(n, positions[n] + d / scrub_sensitivity)
+  engine.seek(n, positions[n] + d / scrub_sens)
 end
 
 
@@ -419,7 +423,7 @@ function init()
   params:add_separator()
   params:add_option("alt_behavior", "alt behavior", {"momentary", "toggle"}, 1)
   params:add_number("scrub_sens", "scrub sensitivity" .. sep, 100, 1000, 500)
-  params:set_action("scrub_sens", function(x) scrub_sensitivity = x end)
+  params:set_action("scrub_sens", function(x) scrub_sens = x end)
   
   for v = 1, VOICES do
     params:add_separator()
