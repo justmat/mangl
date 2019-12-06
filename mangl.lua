@@ -78,6 +78,7 @@ local track_speed = {}
 local loop_in = {}
 local loop_out = {}
 local loops = {}
+local latched = {}
 for i = 1, VOICES do
   positions[i] = -1
   track_speed[i] = 0
@@ -89,12 +90,12 @@ for i = 1, VOICES do
     state = 0,
     dir = 1
   }
+  latched[i] = true
 end
 
 local tracks = {"one", "two", "three", "four", "five", "six", "seven"}
 local track = 1
 local alt = false
-local latched = true
 
 local last_enc = 0
 local time_last_enc = 0
@@ -694,9 +695,9 @@ function grid_key(x, y, z, skip_record)
     track = y - 1
     if alt and z == 1 then
       params:set(track .. "play", 2)
-      latched = not latched
+      latched[track] = not latched[track]
     else
-      if latched == false then
+      if latched[track] == false then
         params:set(track .. "play", z == 1 and 2 or 1)
       end
     end
