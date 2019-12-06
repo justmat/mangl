@@ -16,7 +16,7 @@
 --
 -- ----------
 --
--- mangl is a 4 track granular
+-- mangl is a 7 track granular
 -- sample player.
 --
 -- arc ring 1 = speed
@@ -27,10 +27,10 @@
 -- norns key1 = alt
 -- norns key2 = enable/disable
 --                voice
+-- norns key3 = set speed to 0
 --
 -- norns enc1 = volume
 -- norns enc3 = nav
---
 --
 -- ----------
 --
@@ -101,7 +101,7 @@ local last_enc = 0
 local time_last_enc = 0
 local time_last_scrub = 0
 
-local scrub_sensitivity = 450
+local scrub_sensitivity = 500
 local was_playing = false
 
 local metro_grid_refresh
@@ -116,19 +116,6 @@ for i = 1, VOICES do
   table.insert(lfo_targets, i .. "density")
   table.insert(lfo_targets, i .. "spread")
   table.insert(lfo_targets, i .. "jitter")
-end
-
-
-local function get_sample_name()
-  -- strips the path and extension from filenames
-  -- if filename is over 15 chars, returns a folded filename
-  local long_name = string.match(params:get(track .. "sample"), "[^/]*$")
-  local short_name = string.match(long_name, "(.+)%..+$")
-  if string.len(short_name) >= 15 then
-    return string.sub(short_name, 1, 4) .. '...' .. string.sub(short_name, -4)
-  else
-    return short_name
-  end
 end
 
 -- pattern recorder. should likely be swapped out for pattern_time lib
@@ -246,35 +233,20 @@ local function record_handler(n)
   end
 end
 
--- for hnds
+-- internals
 
-function lfo.process()
-  -- for lib hnds
-  for i = 1, 4 do
-    local target = params:get(i .. "lfo_target")
-    local target_name = string.sub(lfo_targets[target], 2)
-    if params:get(i .. "lfo") == 2 then
-      -- volume
-      if target_name == "volume" then
-        params:set(lfo_targets[target], lfo.scale(lfo[i].slope, -1.0, 2.0, -60, 20))
-      -- size
-      elseif target_name == "size" then
-        params:set(lfo_targets[target], lfo.scale(lfo[i].slope, -1.0, 2.0, 1, 500))
-      -- density
-      elseif target_name == "density" then
-        params:set(lfo_targets[target], lfo.scale(lfo[i].slope, -1.0, 2.0, 0, 512))
-      -- spread
-      elseif target_name == "spread" then
-        params:set(lfo_targets[target], lfo.scale(lfo[i].slope, -1.0, 2.0, 0, 100))
-      -- jitter
-      elseif target_name == "jitter" then
-        params:set(lfo_targets[target], lfo.scale(lfo[i].slope, -1.0, 2.0, 0, 500))
-      end
-    end
+local function get_sample_name()
+  -- strips the path and extension from filenames
+  -- if filename is over 15 chars, returns a folded filename
+  local long_name = string.match(params:get(track .. "sample"), "[^/]*$")
+  local short_name = string.match(long_name, "(.+)%..+$")
+  if string.len(short_name) >= 15 then
+    return string.sub(short_name, 1, 4) .. '...' .. string.sub(short_name, -4)
+  else
+    return short_name
   end
 end
 
--- internals
 
 local function display_voice(phase, width)
   local pos = phase * width
@@ -370,6 +342,34 @@ function loop_pos()
   end
 end
 
+-- for hnds
+
+function lfo.process()
+  -- for lib hnds
+  for i = 1, 4 do
+    local target = params:get(i .. "lfo_target")
+    local target_name = string.sub(lfo_targets[target], 2)
+    if params:get(i .. "lfo") == 2 then
+      -- volume
+      if target_name == "volume" then
+        params:set(lfo_targets[target], lfo.scale(lfo[i].slope, -1.0, 2.0, -60, 20))
+      -- size
+      elseif target_name == "size" then
+        params:set(lfo_targets[target], lfo.scale(lfo[i].slope, -1.0, 2.0, 1, 500))
+      -- density
+      elseif target_name == "density" then
+        params:set(lfo_targets[target], lfo.scale(lfo[i].slope, -1.0, 2.0, 0, 512))
+      -- spread
+      elseif target_name == "spread" then
+        params:set(lfo_targets[target], lfo.scale(lfo[i].slope, -1.0, 2.0, 0, 100))
+      -- jitter
+      elseif target_name == "jitter" then
+        params:set(lfo_targets[target], lfo.scale(lfo[i].slope, -1.0, 2.0, 0, 500))
+      end
+    end
+  end
+end
+
 
 -- init ----------
 
@@ -418,6 +418,8 @@ function init()
 
   params:add_separator()
   params:add_option("alt_behavior", "alt behavior", {"momentary", "toggle"}, 1)
+  params:add_number("scrub_sens", "scrub sensitivity" .. sep, 100, 1000, 500)
+  params:set_action("scrub_sens", function(x) scrub_sensitivity = x end)
   
   for v = 1, VOICES do
     params:add_separator()
