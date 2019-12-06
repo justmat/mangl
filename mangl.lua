@@ -108,8 +108,12 @@ local metro_blink
 
 -- arc sensitivity settings
 
-local scrub_sens = 500
-local speed_sens 
+local scrub_sens
+local speed_sens
+local size_sens
+local density_sens
+local spread_sens
+local jitter_sens
 
 -- for lib/hnds
 
@@ -422,8 +426,7 @@ function init()
 
   params:add_separator()
   params:add_option("alt_behavior", "alt behavior", {"momentary", "toggle"}, 1)
-  params:add_number("scrub_sens", "scrub sensitivity" .. sep, 100, 1000, 500)
-  params:set_action("scrub_sens", function(x) scrub_sens = x end)
+  
   
   for v = 1, VOICES do
     params:add_separator()
@@ -461,6 +464,27 @@ function init()
     lfo[i].lfo_targets = lfo_targets
   end
   lfo.init()
+
+  -- arc sensitivty settings
+  params:add_separator()
+
+  params:add_number("speed_sens", "speed sens" .. sep, 1, 100, 10)
+  params:set_action("speed_sens", function(x) speed_sens = x end)
+  
+  params:add_number("size_sens", "size sens" .. sep, 1, 100, 10)
+  params:set_action("size_sens", function(x) size_sens = x end)
+  
+  params:add_number("density_sens", "density sens" .. sep, 1, 100, 10)
+  params:set_action("density_sens", function(x) density_sens = x end)
+
+  params:add_number("scrub_sens", "scrub sens" .. sep, 100, 1000, 500)
+  params:set_action("scrub_sens", function(x) scrub_sens = x end)
+
+  params:add_number("spread_sens", "spread sens" .. sep, 1, 100, 10)
+  params:set_action("spread_sens", function(x) spread_sens = x end)
+
+  params:add_number("jitter_sens", "jitter sens" .. sep, 1, 100, 10)
+  params:set_action("jitter_sens", function(x) jitter_sens = x end)
   
   params:read()
   params:bang()
@@ -645,19 +669,19 @@ function a.delta(n, d)
     elseif n == 2 then
       params:delta(track .. "pitch", d / 20)
     elseif n == 3 then
-      params:delta(track .. "spread", d / 10)
+      params:delta(track .. "spread", d / spread_sens)
     elseif n == 4 then
-      params:delta(track .. "jitter", d / 10)
+      params:delta(track .. "jitter", d / jitter_sens)
     end
   else
     if n == 1 then
-      params:delta(track .. "speed", d / 10)
+      params:delta(track .. "speed", d / speed_sens)
     elseif n == 2 then
       params:delta(track .. "pitch", d / 2)
     elseif n == 3 then
-      params:delta(track .. "size", d / 10)
+      params:delta(track .. "size", d / size_sens)
     elseif n == 4 then
-      params:delta(track .. "density", d / 10)
+      params:delta(track .. "density", d / density_sens)
     end
   end
 end
