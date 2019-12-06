@@ -620,6 +620,13 @@ function redraw()
   screen.font_face(12)
   screen.text("L")
 
+  if not latched[track] then
+    screen.level(12)
+    screen.font_face(12)
+    screen.font_size(8)
+    screen.move_rel(-6, -11)
+    screen.text("m")
+  end
   screen.update()
 end
 
