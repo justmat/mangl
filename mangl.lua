@@ -119,6 +119,7 @@ local jitter_sens
 
 local lfo_targets = {"none"}
 for i = 1, VOICES do
+  table.insert(lfo_targets, i .. "position")
   table.insert(lfo_targets, i .. "volume")
   table.insert(lfo_targets, i .. "size")
   table.insert(lfo_targets, i .. "density")
@@ -357,6 +358,7 @@ function lfo.process()
   for i = 1, 4 do
     local target = params:get(i .. "lfo_target")
     local target_name = string.sub(lfo_targets[target], 2)
+    local voice = string.sub(lfo_targets[target], 1, 1)
     if params:get(i .. "lfo") == 2 then
       -- volume
       if target_name == "volume" then
@@ -373,6 +375,9 @@ function lfo.process()
       -- jitter
       elseif target_name == "jitter" then
         params:set(lfo_targets[target], lfo.scale(lfo[i].slope, -1.0, 2.0, 0, 500))
+      -- position
+      elseif target_name == "position" then
+        engine.seek(voice, lfo.scale(lfo[i].slope, -1.0, 2.0, 0, 1))
       end
     end
   end
