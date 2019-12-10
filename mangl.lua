@@ -745,6 +745,7 @@ function grid_key(x, y, z, skip_record)
     if y > 1 then
       local voice = y - 1
       start_voice(voice, (x - 1) / 16)
+      params:set(voice .. "play", 2)
     else
       if x == 16 then
         -- alt
