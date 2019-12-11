@@ -118,7 +118,7 @@ local jitter_sens
 -- for lib/hnds
 
 local lfo_targets = {"none"}
-for i = 1, 4 do
+for i = 1, VOICES do
   table.insert(lfo_targets, i .. "position")
   table.insert(lfo_targets, i .. "volume")
   table.insert(lfo_targets, i .. "size")
