@@ -57,7 +57,7 @@
 --
 -- llllllll.co/t/21066
 
-engine.name = 'Glut'
+engine.name = 'MGlut'
 
 local a = arc.connect(1)
 local g = grid.connect(1)
@@ -118,7 +118,7 @@ local jitter_sens
 -- for lib/hnds
 
 local lfo_targets = {"none"}
-for i = 1, VOICES do
+for i = 1, 4 do
   table.insert(lfo_targets, i .. "position")
   table.insert(lfo_targets, i .. "volume")
   table.insert(lfo_targets, i .. "size")
@@ -414,15 +414,30 @@ function init()
 
   local sep = ": "
 
-  params:add_taper("reverb_mix", "*" .. sep .. "mix", 0, 100, 20, 0, "%")
-  params:set_action("reverb_mix", function(value) engine.reverb_mix(value / 100) end)
-
-  params:add_taper("reverb_room", "*" .. sep .. "room", 0, 100, 50, 0, "%")
-  params:set_action("reverb_room", function(value) engine.reverb_room(value / 100) end)
-
-  params:add_taper("reverb_damp", "*" .. sep .. "damp", 0, 100, 50, 0, "%")
-  params:set_action("reverb_damp", function(value) engine.reverb_damp(value / 100) end)
+  -- effect controls
+  -- delay time
+  params:add_control("delay_time", "*" .. "delay time", controlspec.new(0.0, 60.0, "lin", .01, 2.00, ""))
+  params:set_action("delay_time", function(value) engine.delay_time(value) end)
+  -- delay size
+  params:add_control("delay_size", "*" .. "delay size", controlspec.new(0.5, 5.0, "lin", 0.01, 2.00, ""))
+  params:set_action("delay_size", function(value) engine.delay_size(value) end)
+  -- dampening 
+  params:add_control("delay_damp", "*" .. "delay damp", controlspec.new(0.0, 1.0, "lin", 0.01, 0.10, ""))
+  params:set_action("delay_damp", function(value) engine.delay_damp(value) end)
+  -- diffusion
+  params:add_control("delay_diff", "*" .. "delay diff", controlspec.new(0.0, 1.0, "lin", 0.01, 0.707, ""))
+  params:set_action("delay_diff", function(value) engine.delay_diff(value) end)
+  -- feedback
+  params:add_control("delay_fdbk", "*" .. "delay fdbk", controlspec.new(0.00, 1.0, "lin", 0.01, 0.20, ""))
+  params:set_action("delay_fdbk", function(value) engine.delay_fdbk(value) end)
+  -- mod depth
+  params:add_control("delay_mod_depth", "*" .. "delay mod depth", controlspec.new(0.0, 1.0, "lin", 0.01, 0.00, ""))
+  params:set_action("delay_mod_depth", function(value) engine.delay_mod_depth(value) end)
+  -- mod rate
+  params:add_control("delay_mod_freq", "*" .. "delay mod freq", controlspec.new(0.0, 10.0, "lin", 0.01, 0.10, "hz"))
+  params:set_action("delay_mod_freq", function(value) engine.delay_mod_freq(value) end)
   
+
   params:add_separator()
   for i = 1, VOICES do
     params:add_file(i .. "sample", i .. sep .. "sample")
