@@ -42,6 +42,8 @@ function.
 * alt + key2 = loop in/out
 * alt + key3 = loop clear
 
+* alt + enc3 = filter cutoff
+
 _nb: loop in/out is set in
 one button press. loop in
 on press, loop out on release._
