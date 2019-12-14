@@ -125,6 +125,7 @@ for i = 1, VOICES do
   table.insert(lfo_targets, i .. "density")
   table.insert(lfo_targets, i .. "spread")
   table.insert(lfo_targets, i .. "jitter")
+  table.insert(lfo_targets, i .. "cutoff")
 end
 
 -- pattern recorder. should likely be swapped out for pattern_time lib
@@ -378,6 +379,8 @@ function lfo.process()
       -- position
       elseif target_name == "position" then
         engine.seek(voice, lfo.scale(lfo[i].slope, -1.0, 2.0, 0, 1))
+      elseif target_name == "cutoff" then
+        params:set(lfo_targets[target], lfo.scale(lfo[i].slope, -1.0, 2.0, 0, 20000))
       end
     end
   end
@@ -474,6 +477,15 @@ function init()
 
     params:add_taper(v .. "spread", v .. sep .. "spread", 0, 100, 0, 0, "%")
     params:set_action(v .. "spread", function(value) engine.spread(v, value / 100) end)
+    
+    params:add_control(v .. "cutoff", v .. sep .. "filter cutoff", controlspec.new(20, 20000, "exp", 0, 20000, "hz"))
+    params:set_action(v .. "cutoff", function(value) engine.cutoff(v, value) end)
+    
+    params:add_control(v .. "q", v .. sep .. "filter q", controlspec.new(0.00, 1.00, "lin", 0.01, 0.2))
+    params:set_action(v .. "q", function(value) engine.q(v, value) end)
+    
+    params:add_number(v .. "mode", v .. sep .. "filter mode", 0, 2, 1)
+    params:set_action(v .. "mode", function(value) engine.mode(v, value) end)
 
     params:add_taper(v .. "fade", v .. sep .. "att / dec", 1, 9000, 1000, 3, "ms")
     params:set_action(v .. "fade", function(value) engine.envscale(v, value / 1000) end)
@@ -593,7 +605,11 @@ end
 
 function enc(n, d)
   if n == 1 then
-    params:delta(track .. "volume", d)
+    if alt then
+      params:delta(track .. "cutoff", d)
+    else
+      params:delta(track .. "volume", d)
+    end
   elseif n == 3 then
     track = util.clamp(track + d, 1, 7)
   end
@@ -621,12 +637,16 @@ function redraw()
   screen.font_size(30)
   screen.text_center(tracks[track])
 
-  if util.time() - time_last_enc < .6 and last_enc == 1 then
+  if util.time() - time_last_enc < .5 and last_enc == 1 then
     screen.level(2)
     screen.move(10, 10)
     screen.font_face(25)
     screen.font_size(6)
-    screen.text(string.format("%.2f", params:get(track .. "volume")))
+    if alt then
+      screen.text(string.format("%.2f", params:get(track .. "cutoff")))
+    else
+      screen.text(string.format("%.2f", params:get(track .. "volume")))
+    end
   end
 
   screen.move(20, 50)
