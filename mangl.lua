@@ -484,7 +484,7 @@ function init()
     params:add_control(v .. "q", v .. sep .. "filter q", controlspec.new(0.00, 1.00, "lin", 0.01, 0.2))
     params:set_action(v .. "q", function(value) engine.q(v, value) end)
     
-    params:add_number(v .. "mode", v .. sep .. "filter mode", 0, 2, 1)
+    params:add_number(v .. "mode", v .. sep .. "filter mode", 0, 2, 0)
     params:set_action(v .. "mode", function(value) engine.mode(v, value) end)
 
     params:add_taper(v .. "fade", v .. sep .. "att / dec", 1, 9000, 1000, 3, "ms")
