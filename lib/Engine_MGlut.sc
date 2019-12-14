@@ -41,7 +41,7 @@ Engine_MGlut : CroneEngine {
 			arg out, phase_out, level_out, buf,
 			gate=0, pos=0, speed=1, jitter=0,
 			size=0.1, density=20, pitch=1, spread=0, gain=1, envscale=1,
-			freeze=0, t_reset_pos=0;
+			freeze=0, t_reset_pos=0, cutoff=20000, q, mode=0;
 
 			var grain_trig;
 			var jitter_sig;
@@ -72,6 +72,8 @@ Engine_MGlut : CroneEngine {
 			pos_sig = Wrap.kr(Select.kr(freeze, [buf_pos, pos]));
 
 			sig = GrainBuf.ar(2, grain_trig, size, buf, pitch, pos_sig + jitter_sig, 2, pan_sig);
+			sig = BMoog.ar(sig, cutoff, q, mode);
+
 			env = EnvGen.kr(Env.asr(1, 1, 1), gate: gate, timeScale: envscale);
 
 			level = env;
@@ -211,7 +213,27 @@ Engine_MGlut : CroneEngine {
 			var voice = msg[1] - 1;
 			voices[voice].set(\envscale, msg[2]);
 		});
-
+		
+		this.addCommand("cutoff", "if", { arg msg;
+		var voice = msg[1] -1;
+		voices[voice].set(\cutoff, msg[2]);
+		});
+		
+		this.addCommand("q", "if", { arg msg;
+		var voice = msg[1] -1;
+		voices[voice].set(\q, msg[2]);
+		});
+		
+		this.addCommand("mode", "if", { arg msg;
+		var voice = msg[1] -1;
+		voices[voice].set(\mode, msg[2]);
+		});
+		
+		this.addCommand("saturation", "if", { arg msg;
+		var voice = msg[1] -1;
+		voices[voice].set(\saturation, msg[2]);
+		});
+		
 		nvoices.do({ arg i;
 			this.addPoll(("phase_" ++ (i+1)).asSymbol, {
 				var val = phases[i].getSynchronous;
