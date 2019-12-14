@@ -47,13 +47,15 @@
 -- alt + key2 = loop in/out
 -- alt + key3 = loop clear
 --
+-- alt + enc1 = filter cutoff
+--
 -- nb: loop in/out is set in
 -- one button press. loop in
 -- on press, loop out on release.
 --
 -- ----------
 --
--- @justmat v1.9
+-- @justmat v2.0
 --
 -- llllllll.co/t/21066
 
