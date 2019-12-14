@@ -229,11 +229,6 @@ Engine_MGlut : CroneEngine {
 		voices[voice].set(\mode, msg[2]);
 		});
 		
-		this.addCommand("saturation", "if", { arg msg;
-		var voice = msg[1] -1;
-		voices[voice].set(\saturation, msg[2]);
-		});
-		
 		nvoices.do({ arg i;
 			this.addPoll(("phase_" ++ (i+1)).asSymbol, {
 				var val = phases[i].getSynchronous;
