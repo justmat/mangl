@@ -42,7 +42,8 @@ function.
 * alt + key2 = loop in/out
 * alt + key3 = loop clear
 
-* alt + enc3 = filter cutoff
+* alt + enc1 = filter cutoff
+* alt + enc2 = delay send
 
 _nb: loop in/out is set in
 one button press. loop in
