@@ -5,7 +5,7 @@ Engine_MGlut : CroneEngine {
 	var effect;
 	var <buffers;
 	var <voices;
-	var mixBus;
+	var effectBus;
 	var <phases;
 	var <levels;
 
@@ -38,10 +38,10 @@ Engine_MGlut : CroneEngine {
 		});
 
 		SynthDef(\synth, {
-			arg out, phase_out, level_out, buf,
+			arg out, effectBus, phase_out, level_out, buf,
 			gate=0, pos=0, speed=1, jitter=0,
 			size=0.1, density=20, pitch=1, spread=0, gain=1, envscale=1,
-			freeze=0, t_reset_pos=0, cutoff=20000, q, mode=0;
+			freeze=0, t_reset_pos=0, cutoff=20000, q, mode=0, send=0;
 
 			var grain_trig;
 			var jitter_sig;
@@ -79,6 +79,7 @@ Engine_MGlut : CroneEngine {
 			level = env;
 
 			Out.ar(out, sig * level * gain);
+			Out.ar(effectBus, sig * level * send);
 			Out.kr(phase_out, pos_sig);
 			// ignore gain for level out
 			Out.kr(level_out, level);
@@ -93,10 +94,10 @@ Engine_MGlut : CroneEngine {
 
 		context.server.sync;
 
-		// mix bus for all synth outputs
-		mixBus =  Bus.audio(context.server, 2);
-
-		effect = Synth.new(\effect, [\in, mixBus.index, \out, context.out_b.index], target: context.xg);
+		// delay bus
+    effectBus = Bus.audio(context.server, 2);
+    
+		effect = Synth.new(\effect, [\in, effectBus.index, \out, context.out_b.index], target: context.xg);
 
 		phases = Array.fill(nvoices, { arg i; Bus.control(context.server); });
 		levels = Array.fill(nvoices, { arg i; Bus.control(context.server); });
@@ -105,7 +106,8 @@ Engine_MGlut : CroneEngine {
 
 		voices = Array.fill(nvoices, { arg i;
 			Synth.new(\synth, [
-				\out, mixBus.index,
+				\out, context.out_b.index,
+				\effectBus, effectBus.index,
 				\phase_out, phases[i].index,
 				\level_out, levels[i].index,
 				\buf, buffers[i],
@@ -229,6 +231,11 @@ Engine_MGlut : CroneEngine {
 		voices[voice].set(\mode, msg[2]);
 		});
 		
+		this.addCommand("send", "if", { arg msg;
+		var voice = msg[1] -1;
+		voices[voice].set(\send, msg[2]);
+		});
+		
 		nvoices.do({ arg i;
 			this.addPoll(("phase_" ++ (i+1)).asSymbol, {
 				var val = phases[i].getSynchronous;
@@ -252,6 +259,6 @@ Engine_MGlut : CroneEngine {
 		levels.do({ arg bus; bus.free; });
 		buffers.do({ arg b; b.free; });
 		effect.free;
-		mixBus.free;
+		effectBus.free;
 	}
 }
