@@ -48,6 +48,7 @@
 -- alt + key3 = loop clear
 --
 -- alt + enc1 = filter cutoff
+-- alt + enc2 = delay send
 --
 -- nb: loop in/out is set in
 -- one button press. loop in
@@ -55,7 +56,7 @@
 --
 -- ----------
 --
--- @justmat v2.0
+-- @justmat v2.1
 --
 -- llllllll.co/t/21066
 
