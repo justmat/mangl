@@ -489,6 +489,9 @@ function init()
     params:add_number(v .. "mode", v .. sep .. "filter mode", 0, 2, 0)
     params:set_action(v .. "mode", function(value) engine.mode(v, value) end)
 
+    params:add_control(v .. "send", v .. sep .. "delay send", controlspec.new(0.0, 1.0, "lin", 0.01, .2))
+    params:set_action(v .. "send", function(value) engine.send(v, value) end)
+
     params:add_taper(v .. "fade", v .. sep .. "att / dec", 1, 9000, 1000, 3, "ms")
     params:set_action(v .. "fade", function(value) engine.envscale(v, value / 1000) end)
   end
@@ -606,14 +609,18 @@ end
 
 
 function enc(n, d)
-  if n == 1 then
-    if alt then
+  if alt then
+    if n == 1 then
       params:delta(track .. "cutoff", d)
-    else
-      params:delta(track .. "volume", d)
+    elseif n == 2 then 
+      params:delta(track .. "send", d)
     end
-  elseif n == 3 then
-    track = util.clamp(track + d, 1, 7)
+  else
+    if n == 1 then
+      params:delta(track .. "volume", d)
+    elseif n == 3 then
+      track = util.clamp(track + d, 1, 7)
+    end
   end
   last_enc = n
   time_last_enc = util.time()
