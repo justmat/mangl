@@ -129,6 +129,7 @@ for i = 1, VOICES do
   table.insert(lfo_targets, i .. "spread")
   table.insert(lfo_targets, i .. "jitter")
   table.insert(lfo_targets, i .. "cutoff")
+  table.insert(lfo_targets, i .. "send")
 end
 
 -- pattern recorder. should likely be swapped out for pattern_time lib
@@ -382,8 +383,12 @@ function lfo.process()
       -- position
       elseif target_name == "position" then
         engine.seek(voice, lfo.scale(lfo[i].slope, -1.0, 2.0, 0, 1))
+      -- filter cutoff
       elseif target_name == "cutoff" then
         params:set(lfo_targets[target], lfo.scale(lfo[i].slope, -1.0, 2.0, 0, 20000))
+      -- delay send
+      elseif target_name == "send" then
+        params:set(lfo_targets[target], lfo.scale(lfo[i].slope, -1.0, 2.0, 0.00, 1.00))
       end
     end
   end
