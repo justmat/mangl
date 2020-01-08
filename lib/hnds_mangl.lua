@@ -88,7 +88,7 @@ function lfo.init()
     params:add_number(i .. "lfo_depth", i .. " lfo depth", 0, 100, 100)
     params:set_action(i .. "lfo_depth", function(value) lfo[i].depth = value end)
     -- lfo offset
-    params:add_control(i .."offset", i .. " offset", controlspec.new(0, 1.99, "lin", 0.01, 0.0, ""))
+    params:add_control(i .."offset", i .. " offset", controlspec.new(-0.99, 1.99, "lin", 0.01, 0.0, ""))
     params:set_action(i .. "offset", function(value) lfo[i].offset = value end)
     -- lfo speed
     params:add_control(i .. "lfo_freq", i .. " lfo freq", controlspec.new(0.01, 10.0, "lin", 0.01, 0.01, ""))
