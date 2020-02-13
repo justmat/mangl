@@ -54,7 +54,7 @@ Engine_MGlut : CroneEngine {
 			var env;
 			var level;
 
-			grain_trig = Impulse.kr(density);
+			grain_trig = Dust.kr(density);
 			buf_dur = BufDur.kr(buf);
 
 			pan_sig = TRand.kr(trig: grain_trig,
