@@ -40,10 +40,12 @@ Engine_MGlut : CroneEngine {
 		SynthDef(\synth, {
 			arg out, effectBus, phase_out, level_out, buf,
 			gate=0, pos=0, speed=1, jitter=0,
-			size=0.1, density=20, pitch=1, spread=0, gain=1, envscale=1,
+			size=0.1, density=20, density_mod_amt=0, pitch=1, spread=0, gain=1, envscale=1,
 			freeze=0, t_reset_pos=0, cutoff=20000, q, mode=0, send=0;
 
 			var grain_trig;
+			var trig_rnd;
+			var density_mod;
 			var jitter_sig;
 			var buf_dur;
 			var pan_sig;
@@ -54,7 +56,10 @@ Engine_MGlut : CroneEngine {
 			var env;
 			var level;
 
-			grain_trig = Dust.kr(density);
+      trig_rnd = LFNoise1.kr(density);
+      density_mod = density * (2**(trig_rnd * density_mod_amt));      
+			grain_trig = Impulse.kr(density_mod);
+
 			buf_dur = BufDur.kr(buf);
 
 			pan_sig = TRand.kr(trig: grain_trig,
@@ -78,8 +83,8 @@ Engine_MGlut : CroneEngine {
 
 			level = env;
 
-			Out.ar(out, sig * level * gain);
-			Out.ar(effectBus, sig * level * send);
+			Out.ar(out, sig * level * gain).softclip;
+			Out.ar(effectBus, sig * level * send).softclip;
 			Out.kr(phase_out, pos_sig);
 			// ignore gain for level out
 			Out.kr(level_out, level);
@@ -194,6 +199,11 @@ Engine_MGlut : CroneEngine {
 		this.addCommand("density", "if", { arg msg;
 			var voice = msg[1] - 1;
 			voices[voice].set(\density, msg[2]);
+		});
+		
+		this.addCommand("density_mod_amt", "if", { arg msg;
+			var voice = msg[1] - 1;
+			voices[voice].set(\density_mod_amt, msg[2]);
 		});
 
 		this.addCommand("pitch", "if", { arg msg;
