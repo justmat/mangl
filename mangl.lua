@@ -480,7 +480,7 @@ function init()
     params:add_taper(v .. "density", v .. sep .. "density", 0, 512, 20, 6, "hz")
     params:set_action(v .. "density", function(value) engine.density(v, value) end)
     
-    params:add_control(v .. "density_mod_amt", v .. sep .. "density mod amt", controlspec.new(0.00, 1.00, "lin", 0.01, 0.00))
+    params:add_control(v .. "density_mod_amt", v .. sep .. "density mod amt", controlspec.new(0, 1, "lin", 0, 0))
     params:set_action(v .. "density_mod_amt", function(value) engine.density_mod_amt(v, value) end)
 
     params:add_taper(v .. "pitch", v .. sep .. "pitch", -24, 24, 0, 0, "st")
