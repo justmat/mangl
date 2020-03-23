@@ -654,16 +654,14 @@ function redraw()
   screen.font_size(30)
   screen.text_center(tracks[track])
 
-  if util.time() - time_last_enc < .5 and last_enc == 1 then
-    screen.level(2)
-    screen.move(10, 10)
-    screen.font_face(25)
-    screen.font_size(6)
-    if alt then
-      screen.text(string.format("%.2f", params:get(track .. "cutoff")))
-    else
-      screen.text(string.format("%.2f", params:get(track .. "volume")))
-    end
+  screen.level(2)
+  screen.move(20, 10)
+  screen.font_face(25)
+  screen.font_size(6)
+  if alt then
+    screen.text_center(string.format("%.2f", params:get(track .. "cutoff")))
+  else
+    screen.text_center(string.format("%.2f", params:get(track .. "volume")))
   end
 
   screen.move(20, 50)
