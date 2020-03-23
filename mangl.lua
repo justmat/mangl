@@ -435,46 +435,46 @@ function init()
   for v = 1, VOICES do
     params:add_group("voice " .. v, 14)
 
-    params:add_option(v .. "play", v .. sep .. "play", {"off","on"}, 1)
+    params:add_option(v .. "play", "play", {"off","on"}, 1)
     params:set_action(v .. "play", function(x) engine.gate(v, x-1) end)
 
-    params:add_taper(v .. "volume", v .. sep .. "volume", -60, 20, -12, 0, "dB")
+    params:add_taper(v .. "volume", "volume", -60, 20, -12, 0, "dB")
     params:set_action(v .. "volume", function(value) engine.volume(v, math.pow(10, value / 20)) end)
 
-    params:add_taper(v .. "speed", v .. sep .. "speed", -300, 300, 0, 0, "%")
+    params:add_taper(v .. "speed", "speed", -300, 300, 0, 0, "%")
     params:set_action(v .. "speed", function(value) engine.speed(v, value / 100) end)
 
-    params:add_taper(v .. "jitter", v .. sep .. "jitter", 0, 500, 0, 5, "ms")
+    params:add_taper(v .. "jitter", "jitter", 0, 500, 0, 5, "ms")
     params:set_action(v .. "jitter", function(value) engine.jitter(v, value / 1000) end)
 
-    params:add_taper(v .. "size", v .. sep .. "size", 1, 500, 100, 5, "ms")
+    params:add_taper(v .. "size", "size", 1, 500, 100, 5, "ms")
     params:set_action(v .. "size", function(value) engine.size(v, value / 1000) end)
 
-    params:add_taper(v .. "density", v .. sep .. "density", 0, 512, 20, 6, "hz")
+    params:add_taper(v .. "density", "density", 0, 512, 20, 6, "hz")
     params:set_action(v .. "density", function(value) engine.density(v, value) end)
     
-    params:add_control(v .. "density_mod_amt", v .. sep .. "density mod amt", controlspec.new(0, 1, "lin", 0, 0))
+    params:add_control(v .. "density_mod_amt", "density mod amt", controlspec.new(0, 1, "lin", 0, 0))
     params:set_action(v .. "density_mod_amt", function(value) engine.density_mod_amt(v, value) end)
 
-    params:add_taper(v .. "pitch", v .. sep .. "pitch", -24, 24, 0, 0, "st")
+    params:add_taper(v .. "pitch", "pitch", -24, 24, 0, 0, "st")
     params:set_action(v .. "pitch", function(value) engine.pitch(v, math.pow(0.5, -value / 12)) end)
 
-    params:add_taper(v .. "spread", v .. sep .. "spread", 0, 100, 0, 0, "%")
+    params:add_taper(v .. "spread", "spread", 0, 100, 0, 0, "%")
     params:set_action(v .. "spread", function(value) engine.spread(v, value / 100) end)
     
-    params:add_control(v .. "cutoff", v .. sep .. "filter cutoff", controlspec.new(20, 20000, "exp", 0, 20000, "hz"))
+    params:add_control(v .. "cutoff", "filter cutoff", controlspec.new(20, 20000, "exp", 0, 20000, "hz"))
     params:set_action(v .. "cutoff", function(value) engine.cutoff(v, value) end)
     
-    params:add_control(v .. "q", v .. sep .. "filter q", controlspec.new(0.00, 1.00, "lin", 0.01, 0.2))
+    params:add_control(v .. "q", "filter q", controlspec.new(0.00, 1.00, "lin", 0.01, 0.2))
     params:set_action(v .. "q", function(value) engine.q(v, value) end)
     
-    params:add_number(v .. "mode", v .. sep .. "filter mode", 0, 2, 0)
+    params:add_number(v .. "mode", "filter mode", 0, 2, 0)
     params:set_action(v .. "mode", function(value) engine.mode(v, value) end)
 
-    params:add_control(v .. "send", v .. sep .. "delay send", controlspec.new(0.0, 1.0, "lin", 0.01, .2))
+    params:add_control(v .. "send", "delay send", controlspec.new(0.0, 1.0, "lin", 0.01, .2))
     params:set_action(v .. "send", function(value) engine.send(v, value) end)
 
-    params:add_taper(v .. "fade", v .. sep .. "att / dec", 1, 9000, 1000, 3, "ms")
+    params:add_taper(v .. "fade", "att / dec", 1, 9000, 1000, 3, "ms")
     params:set_action(v .. "fade", function(value) engine.envscale(v, value / 1000) end)
   end
 
