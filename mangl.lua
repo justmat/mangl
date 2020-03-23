@@ -421,46 +421,19 @@ function init()
     table.insert(pattern_positions, 1)
   end
   
-  params:add_separator()
+  params:add_separator("load samples")
 
   local sep = ": "
 
-  -- effect controls
-  -- delay time
-  params:add_control("delay_time", "*" .. "delay time", controlspec.new(0.0, 60.0, "lin", .01, 2.00, ""))
-  params:set_action("delay_time", function(value) engine.delay_time(value) end)
-  -- delay size
-  params:add_control("delay_size", "*" .. "delay size", controlspec.new(0.5, 5.0, "lin", 0.01, 2.00, ""))
-  params:set_action("delay_size", function(value) engine.delay_size(value) end)
-  -- dampening 
-  params:add_control("delay_damp", "*" .. "delay damp", controlspec.new(0.0, 1.0, "lin", 0.01, 0.10, ""))
-  params:set_action("delay_damp", function(value) engine.delay_damp(value) end)
-  -- diffusion
-  params:add_control("delay_diff", "*" .. "delay diff", controlspec.new(0.0, 1.0, "lin", 0.01, 0.707, ""))
-  params:set_action("delay_diff", function(value) engine.delay_diff(value) end)
-  -- feedback
-  params:add_control("delay_fdbk", "*" .. "delay fdbk", controlspec.new(0.00, 1.0, "lin", 0.01, 0.20, ""))
-  params:set_action("delay_fdbk", function(value) engine.delay_fdbk(value) end)
-  -- mod depth
-  params:add_control("delay_mod_depth", "*" .. "delay mod depth", controlspec.new(0.0, 1.0, "lin", 0.01, 0.00, ""))
-  params:set_action("delay_mod_depth", function(value) engine.delay_mod_depth(value) end)
-  -- mod rate
-  params:add_control("delay_mod_freq", "*" .. "delay mod freq", controlspec.new(0.0, 10.0, "lin", 0.01, 0.10, "hz"))
-  params:set_action("delay_mod_freq", function(value) engine.delay_mod_freq(value) end)
-  
-
-  params:add_separator()
+  --params:add_group("samples", VOICES)
   for i = 1, VOICES do
     params:add_file(i .. "sample", i .. sep .. "sample")
     params:set_action(i .. "sample", function(file) engine.read(i, file) end)
   end
+  params:add_separator("mangl params")
 
-  params:add_separator()
-  params:add_option("alt_behavior", "alt behavior", {"momentary", "toggle"}, 1)
-  
-  
   for v = 1, VOICES do
-    params:add_separator()
+    params:add_group("voice " .. v, 14)
 
     params:add_option(v .. "play", v .. sep .. "play", {"off","on"}, 1)
     params:set_action(v .. "play", function(x) engine.gate(v, x-1) end)
@@ -505,14 +478,40 @@ function init()
     params:set_action(v .. "fade", function(value) engine.envscale(v, value / 1000) end)
   end
 
+  params:add_group("delay", 7)
+  -- effect controls
+  -- delay time
+  params:add_control("delay_time", "*" .. "delay time", controlspec.new(0.0, 60.0, "lin", .01, 2.00, ""))
+  params:set_action("delay_time", function(value) engine.delay_time(value) end)
+  -- delay size
+  params:add_control("delay_size", "*" .. "delay size", controlspec.new(0.5, 5.0, "lin", 0.01, 2.00, ""))
+  params:set_action("delay_size", function(value) engine.delay_size(value) end)
+  -- dampening 
+  params:add_control("delay_damp", "*" .. "delay damp", controlspec.new(0.0, 1.0, "lin", 0.01, 0.10, ""))
+  params:set_action("delay_damp", function(value) engine.delay_damp(value) end)
+  -- diffusion
+  params:add_control("delay_diff", "*" .. "delay diff", controlspec.new(0.0, 1.0, "lin", 0.01, 0.707, ""))
+  params:set_action("delay_diff", function(value) engine.delay_diff(value) end)
+  -- feedback
+  params:add_control("delay_fdbk", "*" .. "delay fdbk", controlspec.new(0.00, 1.0, "lin", 0.01, 0.20, ""))
+  params:set_action("delay_fdbk", function(value) engine.delay_fdbk(value) end)
+  -- mod depth
+  params:add_control("delay_mod_depth", "*" .. "delay mod depth", controlspec.new(0.0, 1.0, "lin", 0.01, 0.00, ""))
+  params:set_action("delay_mod_depth", function(value) engine.delay_mod_depth(value) end)
+  -- mod rate
+  params:add_control("delay_mod_freq", "*" .. "delay mod freq", controlspec.new(0.0, 10.0, "lin", 0.01, 0.10, "hz"))
+  params:set_action("delay_mod_freq", function(value) engine.delay_mod_freq(value) end)
+
   -- for hnds
   for i = 1, 4 do
     lfo[i].lfo_targets = lfo_targets
   end
+  params:add_group("lfo's", 28)
   lfo.init()
 
   -- arc sensitivty settings
-  params:add_separator()
+  params:add_separator("hardware config")
+  params:add_option("alt_behavior", "alt behavior", {"momentary", "toggle"}, 1)
 
   params:add_number("speed_sens", "speed sens" .. sep, 1, 100, 10)
   params:set_action("speed_sens", function(x) speed_sens = x end)

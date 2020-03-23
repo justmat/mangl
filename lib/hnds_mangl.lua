@@ -78,23 +78,23 @@ end
 
 function lfo.init()
   for i = 1, number_of_outputs do
-    params:add_separator()
+    params:add_separator("lfo " .. i)
     -- modulation destination
-    params:add_option(i .. "lfo_target", i .. " lfo target", lfo[i].lfo_targets, 1)
+    params:add_option(i .. "lfo_target", "lfo target", lfo[i].lfo_targets, 1)
     -- lfo shape
-    params:add_option(i .. "lfo_shape", i .. " lfo shape", options.lfotypes, 1)
+    params:add_option(i .. "lfo_shape", "lfo shape", options.lfotypes, 1)
     params:set_action(i .. "lfo_shape", function(value) lfo[i].waveform = options.lfotypes[value] end)
     -- lfo depth
-    params:add_number(i .. "lfo_depth", i .. " lfo depth", 0, 100, 100)
+    params:add_number(i .. "lfo_depth", "lfo depth", 0, 100, 100)
     params:set_action(i .. "lfo_depth", function(value) lfo[i].depth = value end)
     -- lfo offset
-    params:add_control(i .."offset", i .. " offset", controlspec.new(-0.99, 1.99, "lin", 0.01, 0.0, ""))
+    params:add_control(i .."offset", "offset", controlspec.new(-0.99, 1.99, "lin", 0.01, 0.0, ""))
     params:set_action(i .. "offset", function(value) lfo[i].offset = value end)
     -- lfo speed
-    params:add_control(i .. "lfo_freq", i .. " lfo freq", controlspec.new(0.01, 10.0, "lin", 0.01, 0.01, ""))
+    params:add_control(i .. "lfo_freq", "lfo freq", controlspec.new(0.01, 10.0, "lin", 0.01, 0.01, ""))
     params:set_action(i .. "lfo_freq", function(value) lfo[i].freq = value end)
     -- lfo on/off
-    params:add_option(i .. "lfo", i .. " lfo", {"off", "on"}, 1)
+    params:add_option(i .. "lfo", "lfo on/off", {"off", "on"}, 1)
   end
 
   local lfo_metro = metro.init()
