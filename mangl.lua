@@ -478,7 +478,7 @@ function init()
     params:set_action(v .. "fade", function(value) engine.envscale(v, value / 1000) end)
   end
 
-  params:add_group("delay", 7)
+  params:add_group("delay", 8)
   -- effect controls
   -- delay time
   params:add_control("delay_time", "*" .. "delay time", controlspec.new(0.0, 60.0, "lin", .01, 2.00, ""))
@@ -501,6 +501,9 @@ function init()
   -- mod rate
   params:add_control("delay_mod_freq", "*" .. "delay mod freq", controlspec.new(0.0, 10.0, "lin", 0.01, 0.10, "hz"))
   params:set_action("delay_mod_freq", function(value) engine.delay_mod_freq(value) end)
+  -- delay output volume
+  params:add_control("delay_volume", "*" .. "delay output volume", controlspec.new(0.0, 1.0, "lin", 0, 1.0, ""))
+  params:set_action("delay_volume", function(value) engine.delay_volume(value) end)
 
   -- for hnds
   for i = 1, 4 do
