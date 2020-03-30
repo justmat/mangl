@@ -91,10 +91,10 @@ Engine_MGlut : CroneEngine {
 		}).add;
 
 		SynthDef(\effect, {
-			arg in, out, delayTime=2.0, damp=0.1, size=4.0, diff=0.7, feedback=0.2, modDepth=0.1, modFreq=0.1;
+			arg in, out, delayTime=2.0, damp=0.1, size=4.0, diff=0.7, feedback=0.2, modDepth=0.1, modFreq=0.1, delayVol=1.0;
 			var sig = In.ar(in, 2);
 			sig = Greyhole.ar(sig, delayTime, damp, size, diff, feedback, modDepth, modFreq);
-			Out.ar(out, sig);
+			Out.ar(out, sig * delayVol);
 		}).add;
 
 		context.server.sync;
@@ -128,6 +128,7 @@ Engine_MGlut : CroneEngine {
 		this.addCommand("delay_fdbk", "f", { arg msg; effect.set(\feedback, msg[1]); });
 		this.addCommand("delay_mod_depth", "f", { arg msg; effect.set(\modDepth, msg[1]); });
 		this.addCommand("delay_mod_freq", "f", { arg msg; effect.set(\modFreq, msg[1]); });
+		this.addCommand("delay_volume", "f", { arg msg; effect.set(\delayVol, msg[1]); });
 
 		this.addCommand("read", "is", { arg msg;
 			this.readBuf(msg[1] - 1, msg[2]);
