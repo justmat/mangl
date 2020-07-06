@@ -433,13 +433,16 @@ function init()
   params:add_separator("mangl params")
 
   for v = 1, VOICES do
-    params:add_group("voice " .. v, 14)
+    params:add_group("voice " .. v, 15)
 
     params:add_option(v .. "play", "play", {"off","on"}, 1)
     params:set_action(v .. "play", function(x) engine.gate(v, x-1) end)
 
     params:add_taper(v .. "volume", "volume", -60, 20, -12, 0, "dB")
     params:set_action(v .. "volume", function(value) engine.volume(v, math.pow(10, value / 20)) end)
+
+    params:add_control(v .. "pos", "pos", controlspec.new(0, 1, "lin", 0.001, 0))
+    params:set_action(v .. "pos", function(value)  engine.seek(v, value) end)
 
     params:add_taper(v .. "speed", "speed", -300, 300, 0, 0, "%")
     params:set_action(v .. "speed", function(value) engine.speed(v, value / 100) end)
