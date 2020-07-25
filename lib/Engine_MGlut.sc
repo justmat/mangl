@@ -83,8 +83,8 @@ Engine_MGlut : CroneEngine {
 
 			level = env;
 
-			Out.ar(out, sig * level * gain).softclip;
-			Out.ar(effectBus, sig * level * send).softclip;
+			Out.ar(out, sig * level * gain);
+			Out.ar(effectBus, sig * level * send);
 			Out.kr(phase_out, pos_sig);
 			// ignore gain for level out
 			Out.kr(level_out, level);
