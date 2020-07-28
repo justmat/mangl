@@ -77,7 +77,7 @@ Engine_MGlut : CroneEngine {
 			pos_sig = Wrap.kr(Select.kr(freeze, [buf_pos, pos]));
 
 			sig = GrainBuf.ar(2, grain_trig, size, buf, pitch, pos_sig + jitter_sig, 2, pan_sig);
-			sig = BMoog.ar(sig, cutoff, q, mode);
+			sig = BLowPass4.ar(sig, cutoff, q);
 
 			env = EnvGen.kr(Env.asr(1, 1, 1), gate: gate, timeScale: envscale);
 
@@ -217,7 +217,7 @@ Engine_MGlut : CroneEngine {
 			voices[voice].set(\spread, msg[2]);
 		});
 
-		this.addCommand("volume", "if", { arg msg;
+		this.addCommand("gain", "if", { arg msg;
 			var voice = msg[1] - 1;
 			voices[voice].set(\gain, msg[2]);
 		});
@@ -235,11 +235,6 @@ Engine_MGlut : CroneEngine {
 		this.addCommand("q", "if", { arg msg;
 		var voice = msg[1] -1;
 		voices[voice].set(\q, msg[2]);
-		});
-		
-		this.addCommand("mode", "if", { arg msg;
-		var voice = msg[1] -1;
-		voices[voice].set(\mode, msg[2]);
 		});
 		
 		this.addCommand("send", "if", { arg msg;
