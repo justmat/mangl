@@ -433,13 +433,13 @@ function init()
   params:add_separator("mangl params")
 
   for v = 1, VOICES do
-    params:add_group("voice " .. v, 15)
+    params:add_group("voice " .. v, 14)
 
     params:add_option(v .. "play", "play", {"off","on"}, 1)
     params:set_action(v .. "play", function(x) engine.gate(v, x-1) end)
 
-    params:add_taper(v .. "volume", "volume", -60, 20, -12, 0, "dB")
-    params:set_action(v .. "volume", function(value) engine.volume(v, math.pow(10, value / 20)) end)
+    params:add_taper(v .. "gain", "gain", -60, 20, -12, 0, "dB")
+    params:set_action(v .. "gain", function(value) engine.gain(v, math.pow(10, value / 20)) end)
 
     params:add_control(v .. "pos", "pos", controlspec.new(0, 1, "lin", 0.001, 0))
     params:set_action(v .. "pos", function(value)  engine.seek(v, value) end)
@@ -468,11 +468,8 @@ function init()
     params:add_control(v .. "cutoff", "filter cutoff", controlspec.new(20, 20000, "exp", 0, 20000, "hz"))
     params:set_action(v .. "cutoff", function(value) engine.cutoff(v, value) end)
     
-    params:add_control(v .. "q", "filter q", controlspec.new(0.00, 1.00, "lin", 0.01, 0.2))
+    params:add_control(v .. "q", "filter q", controlspec.new(0.00, 1.00, "lin", 0.01, 1))
     params:set_action(v .. "q", function(value) engine.q(v, value) end)
-    
-    params:add_number(v .. "mode", "filter mode", 0, 2, 0)
-    params:set_action(v .. "mode", function(value) engine.mode(v, value) end)
 
     params:add_control(v .. "send", "delay send", controlspec.new(0.0, 1.0, "lin", 0.01, .2))
     params:set_action(v .. "send", function(value) engine.send(v, value) end)
@@ -631,7 +628,7 @@ function enc(n, d)
     end
   else
     if n == 1 then
-      params:delta(track .. "volume", d)
+      params:delta(track .. "gain", d)
     elseif n == 3 then
       track = util.clamp(track + d, 1, 7)
     end
@@ -667,7 +664,7 @@ function redraw()
   if alt then
     screen.text_center(string.format("%.2f", params:get(track .. "cutoff")))
   else
-    screen.text_center(string.format("%.2f", params:get(track .. "volume")))
+    screen.text_center(string.format("%.2f", params:get(track .. "gain")))
   end
 
   screen.move(20, 50)
