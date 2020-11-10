@@ -644,11 +644,16 @@ function redraw()
   screen.move(123, 10)
   screen.font_face(25)
   screen.font_size(6)
-  screen.level(1)
-  if params:get(track .. "sample") == "-" then
-    screen.text_right("-")
+  screen.level(2)
+  if alt then
+    screen.text_right(params:get(track .. "send"))
   else
-    screen.text_right(get_sample_name())
+    if params:get(track .. "sample") == "-" then
+      screen.level(1)
+      screen.text_right("-")
+    else
+      screen.text_right(get_sample_name())
+    end
   end
 
   screen.move(64, 36)
