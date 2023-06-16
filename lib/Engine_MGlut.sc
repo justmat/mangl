@@ -64,7 +64,7 @@ Engine_MGlut : CroneEngine {
 		SynthDef(\synth, {
 			arg out, effectBus, phase_out, level_out, buf_l, buf_r,
 			gate=0, pos=0, speed=1, jitter=0,
-			size=0.1, density=20, density_mod_amt=0, pitch=1, spread=0, gain=1, envscale=1,
+			size=0.1, density=20, density_mod_amt=0, pitch=1, pan=0, spread=0, gain=1, envscale=1,
 			freeze=0, t_reset_pos=0, cutoff=20000, q, mode=0, send=0;
 
 			var grain_trig;
@@ -105,7 +105,7 @@ Engine_MGlut : CroneEngine {
 			sig_l = GrainBuf.ar(1, grain_trig, size, buf_l, pitch, pos_sig + jitter_sig, 2);
 			sig_r = GrainBuf.ar(1, grain_trig, size, buf_r, pitch, pos_sig + jitter_sig, 2);
 
-			sig_mix = Balance2.ar(sig_l, sig_r, pan_sig);
+			sig_mix = Balance2.ar(sig_l, sig_r, pan + pan_sig);
 
 			sig_mix = BLowPass4.ar(sig_mix, cutoff, q);
 
@@ -241,6 +241,11 @@ Engine_MGlut : CroneEngine {
 		this.addCommand("pitch", "if", { arg msg;
 			var voice = msg[1] - 1;
 			voices[voice].set(\pitch, msg[2]);
+		});
+
+		this.addCommand("pan", "if", { arg msg;
+			var voice = msg[1] - 1;
+			voices[voice].set(\pan, msg[2]);
 		});
 
 		this.addCommand("spread", "if", { arg msg;
