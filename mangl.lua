@@ -433,7 +433,7 @@ function init()
   params:add_separator("mangl params")
 
   for v = 1, VOICES do
-    params:add_group("voice " .. v, 14)
+    params:add_group("voice " .. v, 15)
 
     params:add_option(v .. "play", "play", {"off","on"}, 1)
     params:set_action(v .. "play", function(x) engine.gate(v, x-1) end)
