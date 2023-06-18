@@ -3,7 +3,8 @@ Engine_MGlut : CroneEngine {
 
 	var pg;
 	var effect;
-	var <buffers;
+	var <buffersL;
+	var <buffersR;
 	var <voices;
 	var effectBus;
 	var <phases;
@@ -17,20 +18,43 @@ Engine_MGlut : CroneEngine {
 
 	// disk read
 	readBuf { arg i, path;
-		if(buffers[i].notNil, {
+		if(buffersL[i].notNil && buffersR[i].notNil, {
 			if (File.exists(path), {
-				// TODO: load stereo files and duplicate GrainBuf for stereo granulation
-				var newbuf = Buffer.readChannel(context.server, path, 0, -1, [0], {
-					voices[i].set(\buf, newbuf);
-					buffers[i].free;
-					buffers[i] = newbuf;
+				var numChannels;
+				var newbuf;
+
+				numChannels = SoundFile.use(path.asString(), { |f| f.numChannels });
+
+				newbuf = Buffer.readChannel(context.server, path, 0, -1, [0], { |b|
+					voices[i].set(\buf_l, b);
+					buffersL[i].free;
+					buffersL[i] = b;
+				});
+
+				if (numChannels > 1, {
+					newbuf = Buffer.readChannel(context.server, path, 0, -1, [1], { |b|
+						voices[i].set(\buf_r, b);
+						buffersR[i].free;
+						buffersR[i] = b;
+					});
+				}, {
+					voices[i].set(\buf_r, newbuf);
+					buffersR[i].free;
+					buffersR[i] = newbuf;
 				});
 			});
 		});
 	}
 
 	alloc {
-		buffers = Array.fill(nvoices, { arg i;
+		buffersL = Array.fill(nvoices, { arg i;
+			Buffer.alloc(
+				context.server,
+				context.server.sampleRate * 1,
+			);
+		});
+
+		buffersR = Array.fill(nvoices, { arg i;
 			Buffer.alloc(
 				context.server,
 				context.server.sampleRate * 1,
@@ -38,9 +62,9 @@ Engine_MGlut : CroneEngine {
 		});
 
 		SynthDef(\synth, {
-			arg out, effectBus, phase_out, level_out, buf,
+			arg out, effectBus, phase_out, level_out, buf_l, buf_r,
 			gate=0, pos=0, speed=1, jitter=0,
-			size=0.1, density=20, density_mod_amt=0, pitch=1, spread=0, gain=1, envscale=1,
+			size=0.1, density=20, density_mod_amt=0, pitch=1, pan=0, spread=0, gain=1, envscale=1,
 			freeze=0, t_reset_pos=0, cutoff=20000, q, mode=0, send=0;
 
 			var grain_trig;
@@ -51,16 +75,18 @@ Engine_MGlut : CroneEngine {
 			var pan_sig;
 			var buf_pos;
 			var pos_sig;
-			var sig;
+			var sig_l;
+			var sig_r;
+			var sig_mix;
 
 			var env;
 			var level;
 
       trig_rnd = LFNoise1.kr(density);
-      density_mod = density * (2**(trig_rnd * density_mod_amt));      
+      density_mod = density * (2**(trig_rnd * density_mod_amt));
 			grain_trig = Impulse.kr(density_mod);
 
-			buf_dur = BufDur.kr(buf);
+			buf_dur = BufDur.kr(buf_l);
 
 			pan_sig = TRand.kr(trig: grain_trig,
 				lo: spread.neg,
@@ -76,15 +102,19 @@ Engine_MGlut : CroneEngine {
 
 			pos_sig = Wrap.kr(Select.kr(freeze, [buf_pos, pos]));
 
-			sig = GrainBuf.ar(2, grain_trig, size, buf, pitch, pos_sig + jitter_sig, 2, pan_sig);
-			sig = BLowPass4.ar(sig, cutoff, q);
+			sig_l = GrainBuf.ar(1, grain_trig, size, buf_l, pitch, pos_sig + jitter_sig, 2);
+			sig_r = GrainBuf.ar(1, grain_trig, size, buf_r, pitch, pos_sig + jitter_sig, 2);
+
+			sig_mix = Balance2.ar(sig_l, sig_r, pan + pan_sig);
+
+			sig_mix = BLowPass4.ar(sig_mix, cutoff, q);
 
 			env = EnvGen.kr(Env.asr(1, 1, 1), gate: gate, timeScale: envscale);
 
 			level = env;
 
-			Out.ar(out, sig * level * gain);
-			Out.ar(effectBus, sig * level * send);
+			Out.ar(out, sig_mix * level * gain);
+			Out.ar(effectBus, sig_mix * level * send);
 			Out.kr(phase_out, pos_sig);
 			// ignore gain for level out
 			Out.kr(level_out, level);
@@ -101,7 +131,7 @@ Engine_MGlut : CroneEngine {
 
 		// delay bus
     effectBus = Bus.audio(context.server, 2);
-    
+
 		effect = Synth.new(\effect, [\in, effectBus.index, \out, context.out_b.index], target: context.xg);
 
 		phases = Array.fill(nvoices, { arg i; Bus.control(context.server); });
@@ -115,7 +145,8 @@ Engine_MGlut : CroneEngine {
 				\effectBus, effectBus.index,
 				\phase_out, phases[i].index,
 				\level_out, levels[i].index,
-				\buf, buffers[i],
+				\buf_l, buffersL[i],
+				\buf_r, buffersR[i],
 			], target: pg);
 		});
 
@@ -201,7 +232,7 @@ Engine_MGlut : CroneEngine {
 			var voice = msg[1] - 1;
 			voices[voice].set(\density, msg[2]);
 		});
-		
+
 		this.addCommand("density_mod_amt", "if", { arg msg;
 			var voice = msg[1] - 1;
 			voices[voice].set(\density_mod_amt, msg[2]);
@@ -210,6 +241,11 @@ Engine_MGlut : CroneEngine {
 		this.addCommand("pitch", "if", { arg msg;
 			var voice = msg[1] - 1;
 			voices[voice].set(\pitch, msg[2]);
+		});
+
+		this.addCommand("pan", "if", { arg msg;
+			var voice = msg[1] - 1;
+			voices[voice].set(\pan, msg[2]);
 		});
 
 		this.addCommand("spread", "if", { arg msg;
@@ -226,22 +262,22 @@ Engine_MGlut : CroneEngine {
 			var voice = msg[1] - 1;
 			voices[voice].set(\envscale, msg[2]);
 		});
-		
+
 		this.addCommand("cutoff", "if", { arg msg;
 		var voice = msg[1] -1;
 		voices[voice].set(\cutoff, msg[2]);
 		});
-		
+
 		this.addCommand("q", "if", { arg msg;
 		var voice = msg[1] -1;
 		voices[voice].set(\q, msg[2]);
 		});
-		
+
 		this.addCommand("send", "if", { arg msg;
 		var voice = msg[1] -1;
 		voices[voice].set(\send, msg[2]);
 		});
-		
+
 		nvoices.do({ arg i;
 			this.addPoll(("phase_" ++ (i+1)).asSymbol, {
 				var val = phases[i].getSynchronous;
@@ -263,7 +299,8 @@ Engine_MGlut : CroneEngine {
 		voices.do({ arg voice; voice.free; });
 		phases.do({ arg bus; bus.free; });
 		levels.do({ arg bus; bus.free; });
-		buffers.do({ arg b; b.free; });
+		buffersL.do({ arg b; b.free; });
+		buffersR.do({ arg b; b.free; });
 		effect.free;
 		effectBus.free;
 	}
