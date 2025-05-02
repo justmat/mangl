@@ -367,28 +367,28 @@ function lfo.process()
     if params:get(i .. "lfo") == 2 then
       -- volume
       if target_name == "volume" then
-        params:set(lfo_targets[target], lfo.scale(lfo[i].slope, -1.0, 2.0, -60, 20))
+        params:set(lfo_targets[target], lfo.scale(lfo[i].slope, -1.0, 1.0, -60, 20))
       -- size
       elseif target_name == "size" then
-        params:set(lfo_targets[target], lfo.scale(lfo[i].slope, -1.0, 2.0, 1, 500))
+        params:set(lfo_targets[target], lfo.scale(lfo[i].slope, -1.0, 1.0, 1, 500))
       -- density
       elseif target_name == "density" then
-        params:set(lfo_targets[target], lfo.scale(lfo[i].slope, -1.0, 2.0, 0, 512))
+        params:set(lfo_targets[target], lfo.scale(lfo[i].slope, -1.0, 1.0, 0, 512))
       -- spread
       elseif target_name == "spread" then
-        params:set(lfo_targets[target], lfo.scale(lfo[i].slope, -1.0, 2.0, 0, 100))
+        params:set(lfo_targets[target], lfo.scale(lfo[i].slope, -1.0, 1.0, 0, 100))
       -- jitter
       elseif target_name == "jitter" then
-        params:set(lfo_targets[target], lfo.scale(lfo[i].slope, -1.0, 2.0, 0, 500))
+        params:set(lfo_targets[target], lfo.scale(lfo[i].slope, -1.0, 1.0, 0, 500))
       -- position
       elseif target_name == "position" then
-        engine.seek(voice, lfo.scale(lfo[i].slope, -1.0, 2.0, 0, 1))
+        engine.seek(voice, lfo.scale(lfo[i].slope, -1.0, 1.0, 0, 1))
       -- filter cutoff
       elseif target_name == "cutoff" then
-        params:set(lfo_targets[target], lfo.scale(lfo[i].slope, -1.0, 2.0, 0, 20000))
+        params:set(lfo_targets[target], lfo.scale(lfo[i].slope, -1.0, 1.0, 0, 20000))
       -- delay send
       elseif target_name == "send" then
-        params:set(lfo_targets[target], lfo.scale(lfo[i].slope, -1.0, 2.0, 0.00, 1.00))
+        params:set(lfo_targets[target], lfo.scale(lfo[i].slope, -1.0, 1.0, 0.00, 1.00))
       end
     end
   end
